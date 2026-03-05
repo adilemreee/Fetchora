@@ -482,9 +482,7 @@ struct SettingsView: View {
                     .font(.system(size: 12))
                     .foregroundColor(Theme.textTertiary)
 
-                Text("Made with ❤️ using SwiftUI")
-                    .font(.system(size: 11))
-                    .foregroundColor(Theme.textTertiary)
+            
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)

@@ -381,6 +381,9 @@ extension DownloadManager: URLSessionDownloadDelegate {
     nonisolated func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         let taskId = downloadTask.taskIdentifier
 
+        // Capture suggested filename from server response
+        let suggestedName = downloadTask.response?.suggestedFilename
+
         // MUST move file synchronously — URLSession deletes tmp file after this method returns
         let fileManager = FileManager.default
         let tempDir = fileManager.temporaryDirectory
@@ -397,6 +400,17 @@ extension DownloadManager: URLSessionDownloadDelegate {
         Task { @MainActor in
             guard let itemId = self.downloadToItem[taskId],
                   let item = self.findItem?(itemId) else { return }
+
+            // Update fileName from server suggestion if current name lacks an extension
+            if let suggested = suggestedName,
+               suggested != "Unknown",
+               suggested.contains(".") {
+                let currentExt = URL(fileURLWithPath: item.fileName).pathExtension
+                if currentExt.isEmpty {
+                    item.fileName = suggested
+                    item.category = FileCategory.from(extension: URL(fileURLWithPath: suggested).pathExtension.lowercased())
+                }
+            }
 
             switch moveResult {
             case .success(let safePath):

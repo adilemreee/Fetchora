@@ -5,7 +5,10 @@
   "version": "1.0",
   "permissions": [
     "nativeMessaging",
-    "activeTab"
+    "activeTab",
+    "contextMenus",
+    "downloads",
+    "tabs"
   ],
   "background": {
     "scripts": ["background.js"],

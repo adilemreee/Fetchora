@@ -4,64 +4,6 @@
 (function () {
   "use strict";
 
-  // File extensions we want to intercept
-  const DOWNLOAD_EXTENSIONS = new Set([
-    "zip",
-    "rar",
-    "7z",
-    "tar",
-    "gz",
-    "bz2",
-    "xz",
-    "dmg",
-    "pkg",
-    "iso",
-    "img",
-    "pdf",
-    "doc",
-    "docx",
-    "xls",
-    "xlsx",
-    "ppt",
-    "pptx",
-    "mp4",
-    "mkv",
-    "avi",
-    "mov",
-    "wmv",
-    "flv",
-    "webm",
-    "m4v",
-    "mp3",
-    "wav",
-    "flac",
-    "aac",
-    "ogg",
-    "wma",
-    "m4a",
-    "exe",
-    "msi",
-    "deb",
-    "rpm",
-    "torrent",
-  ]);
-
-  function getExtension(url) {
-    try {
-      const pathname = new URL(url).pathname;
-      const parts = pathname.split(".");
-      if (parts.length > 1) {
-        return parts.pop().toLowerCase().split("?")[0];
-      }
-    } catch (e) {}
-    return "";
-  }
-
-  function isDownloadLink(url) {
-    const ext = getExtension(url);
-    return DOWNLOAD_EXTENSIONS.has(ext);
-  }
-
   function getFileName(url) {
     try {
       const pathname = new URL(url).pathname;
@@ -72,7 +14,28 @@
     }
   }
 
-  // Listen for clicks on links
+  // Web page extensions that should NOT be intercepted
+  const PAGE_EXTENSIONS = new Set([
+    "html", "htm", "xhtml", "shtml",
+    "php", "asp", "aspx", "jsp", "jspx",
+    "cgi", "pl", "py", "rb", "cfm",
+    "do", "action", "xsp",
+  ]);
+
+  function isDownloadLink(url) {
+    try {
+      const pathname = new URL(url).pathname;
+      const lastSegment = pathname.split("/").pop();
+      if (!lastSegment || !lastSegment.includes(".")) return false;
+      const ext = lastSegment.split(".").pop().toLowerCase();
+      // Exclude web page extensions
+      return ext && !PAGE_EXTENSIONS.has(ext);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Listen for clicks on links with download attribute or file extensions
   document.addEventListener(
     "click",
     function (event) {
@@ -80,10 +43,11 @@
       if (!link) return;
 
       const url = link.href;
-      if (!url || !isDownloadLink(url)) return;
+      if (!url || url.startsWith("javascript:") || url.startsWith("#")) return;
 
-      // Check if link has download attribute
+      // Intercept if link has download attribute OR URL points to a downloadable file
       const hasDownloadAttr = link.hasAttribute("download");
+      if (!hasDownloadAttr && !isDownloadLink(url)) return;
 
       // Intercept the download
       event.preventDefault();
@@ -106,33 +70,12 @@
     true,
   );
 
-  // Also handle download attribute links
-  document.addEventListener(
-    "click",
-    function (event) {
-      const link = event.target.closest("a[download]");
-      if (!link) return;
-
-      const url = link.href;
-      if (!url) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-
-      const fileName = link.download || getFileName(url);
-
-      browser.runtime.sendMessage({
-        action: "interceptDownload",
-        url: url,
-        fileName: fileName,
-        pageUrl: window.location.href,
-        pageTitle: document.title,
-      });
-
-      showInterceptNotification(fileName);
-    },
-    true,
-  );
+  // Listen for messages from background script (context menu / downloads API)
+  browser.runtime.onMessage.addListener((message) => {
+    if (message.action === "showNotification" && message.fileName) {
+      showInterceptNotification(message.fileName);
+    }
+  });
 
   function showInterceptNotification(fileName) {
     const notification = document.createElement("div");
