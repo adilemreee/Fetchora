@@ -73,10 +73,10 @@ extension NSImage {
         let ratio = min(ratioW, ratioH)
         let newSize = NSSize(width: size.width * ratio, height: size.height * ratio)
 
-        let newImage = NSImage(size: newSize)
-        newImage.lockFocus()
-        draw(in: NSRect(origin: .zero, size: newSize))
-        newImage.unlockFocus()
+        let newImage = NSImage(size: newSize, flipped: false) { rect in
+            self.draw(in: rect)
+            return true
+        }
         return newImage
     }
 }

@@ -29,7 +29,13 @@ struct SwiftDownloaderApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // If migration fails, try with a fresh store
+            let inMemoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            do {
+                return try ModelContainer(for: schema, configurations: [inMemoryConfig])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
     }()
 
@@ -43,7 +49,7 @@ struct SwiftDownloaderApp: App {
                 .preferredColorScheme(colorScheme)
                 .onAppear {
                     applyThemeToAllWindows()
-                    setupDistributedNotificationListener()
+                    setupDistributedNotificationListenerOnce()
                     applyAppBehaviorSettings()
                 }
                 .onChange(of: themeMode) { _, _ in
@@ -81,7 +87,10 @@ struct SwiftDownloaderApp: App {
         }
     }
 
-    private func setupDistributedNotificationListener() {
+    private static var didSetupListener = false
+    private func setupDistributedNotificationListenerOnce() {
+        guard !Self.didSetupListener else { return }
+        Self.didSetupListener = true
         // Listen for download requests from Safari Extension via DistributedNotificationCenter
         DistributedNotificationCenter.default().addObserver(
             forName: NSNotification.Name("com.adilemre.SwiftDownloader.newDownload"),

@@ -4,6 +4,43 @@
 (function () {
   "use strict";
 
+  // Downloadable file extensions — ONLY these trigger interception on click
+  const DOWNLOAD_EXTENSIONS = new Set([
+    // Archives
+    "zip", "rar", "7z", "tar", "gz", "bz2", "xz", "tgz", "zst",
+    // Disk images & installers
+    "dmg", "pkg", "iso", "img", "exe", "msi", "deb", "rpm", "app", "appimage",
+    // Documents
+    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "rtf", "csv", "epub",
+    // Video
+    "mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v", "mpg", "mpeg", "ts",
+    // Audio
+    "mp3", "wav", "flac", "aac", "ogg", "wma", "m4a", "opus", "aiff",
+    // Images (large/downloadable types)
+    "psd", "ai", "sketch", "fig", "raw", "cr2", "nef", "tiff",
+    // Fonts
+    "ttf", "otf", "woff", "woff2",
+    // Torrents
+    "torrent", "magnet",
+    // Data
+    "sql", "db", "sqlite", "bak",
+  ]);
+
+  function getExtension(url) {
+    try {
+      const pathname = new URL(url).pathname;
+      const lastSegment = pathname.split("/").pop();
+      if (!lastSegment || !lastSegment.includes(".")) return "";
+      return lastSegment.split(".").pop().toLowerCase().split("?")[0];
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function isDownloadableFile(url) {
+    return DOWNLOAD_EXTENSIONS.has(getExtension(url));
+  }
+
   function getFileName(url) {
     try {
       const pathname = new URL(url).pathname;
@@ -14,28 +51,18 @@
     }
   }
 
-  // Web page extensions that should NOT be intercepted
-  const PAGE_EXTENSIONS = new Set([
-    "html", "htm", "xhtml", "shtml",
-    "php", "asp", "aspx", "jsp", "jspx",
-    "cgi", "pl", "py", "rb", "cfm",
-    "do", "action", "xsp",
-  ]);
-
-  function isDownloadLink(url) {
-    try {
-      const pathname = new URL(url).pathname;
-      const lastSegment = pathname.split("/").pop();
-      if (!lastSegment || !lastSegment.includes(".")) return false;
-      const ext = lastSegment.split(".").pop().toLowerCase();
-      // Exclude web page extensions
-      return ext && !PAGE_EXTENSIONS.has(ext);
-    } catch (e) {
-      return false;
-    }
+  function interceptLink(url, fileName) {
+    browser.runtime.sendMessage({
+      action: "interceptDownload",
+      url: url,
+      fileName: fileName,
+      pageUrl: window.location.href,
+      pageTitle: document.title,
+    });
+    showInterceptNotification(fileName);
   }
 
-  // Listen for clicks on links with download attribute or file extensions
+  // Listen for clicks on links
   document.addEventListener(
     "click",
     function (event) {
@@ -43,29 +70,19 @@
       if (!link) return;
 
       const url = link.href;
-      if (!url || url.startsWith("javascript:") || url.startsWith("#")) return;
+      if (!url || url.startsWith("javascript:") || url.startsWith("#") || url.startsWith("mailto:")) return;
 
-      // Intercept if link has download attribute OR URL points to a downloadable file
       const hasDownloadAttr = link.hasAttribute("download");
-      if (!hasDownloadAttr && !isDownloadLink(url)) return;
+      const isDownloadable = isDownloadableFile(url);
 
-      // Intercept the download
+      // Only intercept: explicit download attribute OR known downloadable extension
+      if (!hasDownloadAttr && !isDownloadable) return;
+
       event.preventDefault();
       event.stopPropagation();
 
       const fileName = link.download || getFileName(url);
-
-      // Send to background script
-      browser.runtime.sendMessage({
-        action: "interceptDownload",
-        url: url,
-        fileName: fileName,
-        pageUrl: window.location.href,
-        pageTitle: document.title,
-      });
-
-      // Show notification on page
-      showInterceptNotification(fileName);
+      interceptLink(url, fileName);
     },
     true,
   );
@@ -77,50 +94,73 @@
     }
   });
 
-  function showInterceptNotification(fileName) {
-    const notification = document.createElement("div");
-    notification.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #1A1B2E, #222339);
-            color: #fff;
-            padding: 14px 20px;
-            border-radius: 12px;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            font-size: 13px;
-            z-index: 999999;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border: 1px solid rgba(79, 142, 247, 0.3);
-            animation: slideIn 0.3s ease-out;
-        `;
-    notification.innerHTML = `
-            <div style="width:32px;height:32px;background:rgba(79,142,247,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M8 2v8m0 0l3-3m-3 3L5 7M3 13h10" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </div>
-            <div>
-                <div style="font-weight:600;margin-bottom:2px;">Fetchora</div>
-                <div style="opacity:0.7;font-size:11px;">${fileName}</div>
-            </div>
-        `;
-
+  // Inject animation style once
+  let styleInjected = false;
+  function ensureStyle() {
+    if (styleInjected) return;
+    styleInjected = true;
     const style = document.createElement("style");
     style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
+      @keyframes fetchora-slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes fetchora-slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `;
     document.head.appendChild(style);
+  }
+
+  function showInterceptNotification(fileName) {
+    ensureStyle();
+
+    // Sanitize fileName to prevent XSS
+    const safeName = document.createElement("span");
+    safeName.textContent = fileName;
+
+    const notification = document.createElement("div");
+    notification.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #1A1B2E, #222339);
+      color: #fff;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+      z-index: 999999;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(79, 142, 247, 0.3);
+      animation: fetchora-slideIn 0.3s ease-out;
+    `;
+
+    // Build DOM safely (no innerHTML with user data)
+    const iconWrap = document.createElement("div");
+    iconWrap.style.cssText = "width:32px;height:32px;background:rgba(79,142,247,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;";
+    iconWrap.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8m0 0l3-3m-3 3L5 7M3 13h10" stroke="#4F8EF7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    const textWrap = document.createElement("div");
+    const titleEl = document.createElement("div");
+    titleEl.style.cssText = "font-weight:600;margin-bottom:2px;";
+    titleEl.textContent = "Fetchora";
+    const nameEl = document.createElement("div");
+    nameEl.style.cssText = "opacity:0.7;font-size:11px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+    nameEl.textContent = fileName;
+    textWrap.appendChild(titleEl);
+    textWrap.appendChild(nameEl);
+
+    notification.appendChild(iconWrap);
+    notification.appendChild(textWrap);
     document.body.appendChild(notification);
 
     setTimeout(() => {
-      notification.style.animation = "slideIn 0.3s ease-in reverse";
+      notification.style.animation = "fetchora-slideOut 0.3s ease-in forwards";
       setTimeout(() => notification.remove(), 300);
     }, 3000);
   }

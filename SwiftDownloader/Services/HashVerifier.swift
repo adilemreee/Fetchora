@@ -7,38 +7,36 @@ enum HashType: String, CaseIterable {
 }
 
 class HashVerifier {
+    private static let chunkSize = 4 * 1024 * 1024 // 4 MB
+
     static func verify(fileAt url: URL, expectedHash: String, type: HashType) async -> (matches: Bool, computed: String) {
-        guard let data = try? Data(contentsOf: url) else {
+        guard let computed = await computeHash(fileAt: url, type: type) else {
             return (false, "Error reading file")
         }
-
-        let computed: String
-        switch type {
-        case .md5:
-            computed = Insecure.MD5.hash(data: data)
-                .map { String(format: "%02hhx", $0) }
-                .joined()
-        case .sha256:
-            computed = SHA256.hash(data: data)
-                .map { String(format: "%02hhx", $0) }
-                .joined()
-        }
-
         return (computed.lowercased() == expectedHash.lowercased(), computed)
     }
 
     static func computeHash(fileAt url: URL, type: HashType) async -> String? {
-        guard let data = try? Data(contentsOf: url) else { return nil }
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { handle.closeFile() }
 
         switch type {
         case .md5:
-            return Insecure.MD5.hash(data: data)
-                .map { String(format: "%02hhx", $0) }
-                .joined()
+            var hasher = Insecure.MD5()
+            while true {
+                let chunk = handle.readData(ofLength: chunkSize)
+                if chunk.isEmpty { break }
+                hasher.update(data: chunk)
+            }
+            return hasher.finalize().map { String(format: "%02hhx", $0) }.joined()
         case .sha256:
-            return SHA256.hash(data: data)
-                .map { String(format: "%02hhx", $0) }
-                .joined()
+            var hasher = SHA256()
+            while true {
+                let chunk = handle.readData(ofLength: chunkSize)
+                if chunk.isEmpty { break }
+                hasher.update(data: chunk)
+            }
+            return hasher.finalize().map { String(format: "%02hhx", $0) }.joined()
         }
     }
 }

@@ -290,14 +290,20 @@ private class SegmentDelegate: NSObject, URLSessionDownloadDelegate {
             FileManager.default.createFile(atPath: destination.path, contents: nil)
             let fileHandle = try FileHandle(forWritingTo: destination)
 
-            // Write segments in order
+            // Write segments in order (stream in chunks to avoid OOM)
+            let chunkSize = 4 * 1024 * 1024 // 4 MB
             for i in 0..<segmentCount {
                 guard let segURL = segmentFiles[i] else {
                     throw NSError(domain: "SegmentedDownload", code: -1,
                                   userInfo: [NSLocalizedDescriptionKey: "Missing segment \(i)"])
                 }
-                let data = try Data(contentsOf: segURL)
-                fileHandle.write(data)
+                let segHandle = try FileHandle(forReadingFrom: segURL)
+                defer { segHandle.closeFile() }
+                while true {
+                    let chunk = segHandle.readData(ofLength: chunkSize)
+                    if chunk.isEmpty { break }
+                    fileHandle.write(chunk)
+                }
                 try? FileManager.default.removeItem(at: segURL)
             }
 

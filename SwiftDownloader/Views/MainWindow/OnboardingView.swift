@@ -24,7 +24,7 @@ struct OnboardingView: View {
 
             // Steps
             VStack(alignment: .leading, spacing: 20) {
-                step(number: 1, icon: "safari.fill", title: "Enable Safari Extension", description: "Safari → Develop → Allow Unsigned Extensions")
+                step(number: 1, icon: "safari.fill", title: "Enable Safari Extension", description: "Safari → Settings → Extensions → Enable Fetchora")
                 step(number: 2, icon: "puzzlepiece.extension.fill", title: "Activate in Settings", description: "Safari → Settings → Extensions → Enable Fetchora")
                 step(number: 3, icon: "arrow.down.doc.fill", title: "Start Downloading", description: "Click any download link in Safari — Fetchora handles the rest")
             }

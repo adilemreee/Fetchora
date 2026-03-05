@@ -90,5 +90,6 @@ struct HistoryView: View {
         for item in historyItems {
             modelContext.delete(item)
         }
+        try? modelContext.save()
     }
 }

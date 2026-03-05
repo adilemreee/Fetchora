@@ -185,18 +185,23 @@ class DownloadManager: NSObject, ObservableObject {
     }
 
     func pauseAll() {
-        let items = Array(activeDownloads.keys)
-        for id in items {
-            if SegmentedDownloadManager.shared.isSegmented(id) {
-                _ = SegmentedDownloadManager.shared.pauseSegmented(itemId: id)
+        let ids = Array(activeDownloads.keys)
+        for id in ids {
+            if let item = findItem?(id) {
+                pauseDownload(item: item)
             } else {
-                activeDownloads[id]?.task?.cancel(byProducingResumeData: { _ in })
+                // Fallback: clean up orphaned tracking
+                if SegmentedDownloadManager.shared.isSegmented(id) {
+                    _ = SegmentedDownloadManager.shared.pauseSegmented(itemId: id)
+                } else {
+                    activeDownloads[id]?.task?.cancel(byProducingResumeData: { _ in })
+                }
+                activeDownloads.removeValue(forKey: id)
+                speeds.removeValue(forKey: id)
+                etas.removeValue(forKey: id)
+                lastUIUpdateTime.removeValue(forKey: id)
             }
-            activeDownloads.removeValue(forKey: id)
         }
-        speeds.removeAll()
-        etas.removeAll()
-        lastUIUpdateTime.removeAll()
         updateTotalSpeed()
         NSApp.dockTile.badgeLabel = nil
     }
