@@ -1,0 +1,177 @@
+/* General */
+"app.name" = "Fetchora";
+"app.version" = "Version %@";
+
+/* Sidebar */
+"sidebar.downloads" = "Downloads";
+"sidebar.all" = "All Downloads";
+"sidebar.active" = "Active";
+"sidebar.completed" = "Completed";
+"sidebar.scheduled" = "Scheduled";
+"sidebar.history" = "History";
+"sidebar.categories" = "Categories";
+
+/* Download Status */
+"status.waiting" = "Waiting";
+"status.downloading" = "Downloading";
+"status.paused" = "Paused";
+"status.completed" = "Completed";
+"status.failed" = "Failed";
+"status.cancelled" = "Cancelled";
+"status.scheduled" = "Scheduled";
+"status.fileDeleted" = "File Deleted";
+
+/* Actions */
+"action.addDownload" = "Add Download";
+"action.bulkDownload" = "Bulk Download";
+"action.pause" = "Pause";
+"action.resume" = "Resume";
+"action.cancel" = "Cancel";
+"action.retry" = "Retry";
+"action.delete" = "Delete";
+"action.rename" = "Rename...";
+"action.schedule" = "Schedule...";
+"action.startNow" = "Start Now";
+"action.copyURL" = "Copy URL";
+"action.showInFinder" = "Show in Finder";
+"action.open" = "Open";
+"action.download" = "Download";
+"action.downloadAll" = "Download All";
+"action.downloadAnyway" = "Download Anyway";
+"action.ignore" = "Ignore";
+"action.clearAll" = "Clear All";
+"action.change" = "Change";
+"action.openSettings" = "Open Settings";
+
+/* Add Download */
+"addDownload.title" = "Add Download";
+"addDownload.placeholder" = "Paste download URL here...";
+"addDownload.bulk" = "Bulk";
+"addDownload.bulkTitle" = "Bulk Download";
+"addDownload.bulkDescription" = "Paste multiple URLs (one per line):";
+"addDownload.urlsDetected" = "%d URLs detected";
+
+/* Clipboard */
+"clipboard.detected" = "URL Detected in Clipboard";
+
+/* Duplicate */
+"duplicate.title" = "Duplicate Download";
+"duplicate.message" = "This URL has already been downloaded or is downloading. Download again?";
+
+/* Schedule */
+"schedule.title" = "Schedule Download";
+"schedule.startAt" = "Start at:";
+
+/* Sort */
+"sort.label" = "Sort:";
+"sort.dateAdded" = "Date Added";
+"sort.name" = "Name";
+"sort.size" = "Size";
+"sort.status" = "Status";
+"sort.priority" = "Priority";
+
+/* Priority */
+"priority.high" = "High";
+"priority.normal" = "Normal";
+"priority.low" = "Low";
+"priority.label" = "Priority";
+
+/* Detail */
+"detail.details" = "Details";
+"detail.url" = "URL";
+"detail.category" = "Category";
+"detail.added" = "Added";
+"detail.completed" = "Completed";
+"detail.location" = "Location";
+"detail.fileSize" = "File Size";
+"detail.error" = "Error";
+"detail.remaining" = "%@ remaining";
+
+/* Settings */
+"settings.title" = "Settings";
+"settings.general" = "General";
+"settings.downloads" = "Downloads";
+"settings.appearance" = "Appearance";
+"settings.network" = "Network";
+"settings.advanced" = "Advanced";
+
+"settings.downloadLocation" = "Download Location";
+"settings.performance" = "Performance";
+"settings.maxConcurrent" = "Max Concurrent Downloads";
+"settings.speedLimit" = "Speed Limit";
+"settings.speedUnlimited" = "Set to 0 for unlimited speed";
+"settings.fileOrganization" = "File Organization";
+"settings.autoCategorize" = "Auto-categorize downloads";
+"settings.autoCategorizeDesc" = "Sort files into category folders";
+"settings.notifications" = "Notifications";
+"settings.desktopNotifications" = "Desktop notifications";
+"settings.desktopNotificationsDesc" = "Show notification when download completes or fails";
+"settings.soundAlerts" = "Sound alerts";
+"settings.soundAlertsDesc" = "Play sound when download completes";
+"settings.autoRetry" = "Auto Retry";
+"settings.autoRetryTitle" = "Auto-retry failed downloads";
+"settings.autoRetryDesc" = "Automatically retry when a download fails";
+"settings.maxRetry" = "Max retry attempts";
+"settings.afterComplete" = "After Download Completes";
+"settings.actionLabel" = "Action";
+"settings.doNothing" = "Do nothing";
+"settings.openFile" = "Open file";
+"settings.showInFinder" = "Show in Finder";
+"settings.theme" = "Theme";
+"settings.system" = "System";
+"settings.dark" = "Dark";
+"settings.light" = "Light";
+"settings.clipboard" = "Clipboard";
+"settings.monitorClipboard" = "Monitor clipboard";
+"settings.monitorClipboardDesc" = "Auto-detect downloadable URLs from clipboard";
+"settings.scheduledDownloads" = "Scheduled Downloads";
+"settings.enableScheduled" = "Enable scheduled downloads";
+"settings.enableScheduledDesc" = "Queue downloads to start at a specific time";
+"settings.startAt" = "Start at";
+"settings.appBehavior" = "App Behavior";
+"settings.launchAtLogin" = "Launch at login";
+"settings.launchAtLoginDesc" = "Start when you log in";
+"settings.startMinimized" = "Start minimized";
+"settings.startMinimizedDesc" = "Only show menu bar on launch";
+"settings.hideFromDock" = "Hide from Dock";
+"settings.hideFromDockDesc" = "Requires restart";
+"settings.showMenuBar" = "Show menu bar icon";
+"settings.showMenuBarDesc" = "Quick access from status bar";
+"settings.proxy" = "Proxy";
+"settings.useProxy" = "Use proxy";
+"settings.useProxyDesc" = "Route downloads through a proxy server";
+"settings.safari" = "Safari Extension";
+"settings.extensionInstalled" = "Extension Installed";
+"settings.safariPath" = "Safari → Settings → Extensions → Fetchora";
+"settings.data" = "Data";
+"settings.clearAll" = "Clear all downloads";
+"settings.clearAllDesc" = "Remove all download records";
+
+/* About */
+"about.title" = "About";
+"about.version" = "Version";
+"about.developer" = "Developer";
+"about.developerName" = "Adil Emre";
+"about.license" = "License";
+"about.licenseType" = "All Rights Reserved";
+"about.website" = "Website";
+"about.privacyPolicy" = "Privacy Policy";
+"about.support" = "Support";
+"about.madeWith" = "Made with ❤️ using SwiftUI";
+
+/* Empty States */
+"empty.noActive" = "No Active Downloads";
+"empty.noCompleted" = "No Completed Downloads";
+"empty.noScheduled" = "No Scheduled Downloads";
+"empty.noDownloads" = "No Downloads";
+"empty.subtitle" = "Downloads from Safari will appear here.\nEnable the extension in Safari preferences.";
+
+/* Menu Bar */
+"menubar.activeCount" = "%d active";
+"menubar.noActive" = "No active downloads";
+"menubar.quit" = "Quit Fetchora";
+"menubar.show" = "Show Fetchora";
+
+/* Onboarding */
+"onboarding.welcome" = "Welcome to Fetchora";
+"onboarding.getStarted" = "Get Started";

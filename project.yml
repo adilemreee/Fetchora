@@ -1,0 +1,62 @@
+name: SwiftDownloader
+options:
+  bundleIdPrefix: com.adilemre
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "15.0"
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    CODE_SIGN_IDENTITY: "Apple Development"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  SwiftDownloader:
+    type: application
+    platform: macOS
+    sources:
+      - SwiftDownloader
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.adilemre.SwiftDownloader
+        INFOPLIST_FILE: SwiftDownloader/Info.plist
+        CODE_SIGN_ENTITLEMENTS: SwiftDownloader/SwiftDownloader.entitlements
+        PRODUCT_NAME: Fetchora
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: 1
+        COMBINE_HIDPI_IMAGES: true
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_IDENTITY: "Sign to Run Locally"
+        CODE_SIGN_STYLE: Automatic
+    entitlements:
+      path: SwiftDownloader/SwiftDownloader.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.security.files.downloads.read-write: true
+        com.apple.security.network.client: true
+    dependencies:
+      - target: "SwiftDownloader Extension"
+
+  SwiftDownloader Extension:
+    type: app-extension
+    platform: macOS
+    sources:
+      - SwiftDownloader Extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.adilemre.SwiftDownloader.Extension
+        INFOPLIST_FILE: "SwiftDownloader Extension/Info.plist"
+        PRODUCT_NAME: "Fetchora Extension"
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: 1
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
+        SWIFT_EMIT_LOC_STRINGS: true
+        GENERATE_INFOPLIST_FILE: false
+        CODE_SIGN_IDENTITY: "Sign to Run Locally"
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: "SwiftDownloader Extension/SwiftDownloader_Extension.entitlements"

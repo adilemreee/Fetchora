@@ -1,0 +1,177 @@
+/* General */
+"app.name" = "Fetchora";
+"app.version" = "Sürüm %@";
+
+/* Sidebar */
+"sidebar.downloads" = "İndirmeler";
+"sidebar.all" = "Tüm İndirmeler";
+"sidebar.active" = "Aktif";
+"sidebar.completed" = "Tamamlanan";
+"sidebar.scheduled" = "Planlanmış";
+"sidebar.history" = "Geçmiş";
+"sidebar.categories" = "Kategoriler";
+
+/* Download Status */
+"status.waiting" = "Bekliyor";
+"status.downloading" = "İndiriliyor";
+"status.paused" = "Duraklatıldı";
+"status.completed" = "Tamamlandı";
+"status.failed" = "Başarısız";
+"status.cancelled" = "İptal Edildi";
+"status.scheduled" = "Planlandı";
+"status.fileDeleted" = "Dosya Silindi";
+
+/* Actions */
+"action.addDownload" = "İndirme Ekle";
+"action.bulkDownload" = "Toplu İndirme";
+"action.pause" = "Duraklat";
+"action.resume" = "Devam Et";
+"action.cancel" = "İptal";
+"action.retry" = "Tekrar Dene";
+"action.delete" = "Sil";
+"action.rename" = "Yeniden Adlandır...";
+"action.schedule" = "Planla...";
+"action.startNow" = "Şimdi Başlat";
+"action.copyURL" = "URL'yi Kopyala";
+"action.showInFinder" = "Finder'da Göster";
+"action.open" = "Aç";
+"action.download" = "İndir";
+"action.downloadAll" = "Tümünü İndir";
+"action.downloadAnyway" = "Yine de İndir";
+"action.ignore" = "Yoksay";
+"action.clearAll" = "Tümünü Temizle";
+"action.change" = "Değiştir";
+"action.openSettings" = "Ayarları Aç";
+
+/* Add Download */
+"addDownload.title" = "İndirme Ekle";
+"addDownload.placeholder" = "İndirme URL'sini buraya yapıştırın...";
+"addDownload.bulk" = "Toplu";
+"addDownload.bulkTitle" = "Toplu İndirme";
+"addDownload.bulkDescription" = "Birden fazla URL yapıştırın (her satıra bir tane):";
+"addDownload.urlsDetected" = "%d URL algılandı";
+
+/* Clipboard */
+"clipboard.detected" = "Panoda URL Algılandı";
+
+/* Duplicate */
+"duplicate.title" = "Yinelenen İndirme";
+"duplicate.message" = "Bu URL zaten indirildi veya indiriliyor. Tekrar indirilsin mi?";
+
+/* Schedule */
+"schedule.title" = "İndirme Planla";
+"schedule.startAt" = "Başlangıç:";
+
+/* Sort */
+"sort.label" = "Sırala:";
+"sort.dateAdded" = "Tarih";
+"sort.name" = "İsim";
+"sort.size" = "Boyut";
+"sort.status" = "Durum";
+"sort.priority" = "Öncelik";
+
+/* Priority */
+"priority.high" = "Yüksek";
+"priority.normal" = "Normal";
+"priority.low" = "Düşük";
+"priority.label" = "Öncelik";
+
+/* Detail */
+"detail.details" = "Detaylar";
+"detail.url" = "URL";
+"detail.category" = "Kategori";
+"detail.added" = "Eklenme";
+"detail.completed" = "Tamamlanma";
+"detail.location" = "Konum";
+"detail.fileSize" = "Dosya Boyutu";
+"detail.error" = "Hata";
+"detail.remaining" = "%@ kaldı";
+
+/* Settings */
+"settings.title" = "Ayarlar";
+"settings.general" = "Genel";
+"settings.downloads" = "İndirmeler";
+"settings.appearance" = "Görünüm";
+"settings.network" = "Ağ";
+"settings.advanced" = "Gelişmiş";
+
+"settings.downloadLocation" = "İndirme Konumu";
+"settings.performance" = "Performans";
+"settings.maxConcurrent" = "Maksimum Eşzamanlı İndirme";
+"settings.speedLimit" = "Hız Limiti";
+"settings.speedUnlimited" = "Sınırsız hız için 0 yazın";
+"settings.fileOrganization" = "Dosya Organizasyonu";
+"settings.autoCategorize" = "İndirmeleri otomatik kategorize et";
+"settings.autoCategorizeDesc" = "Dosyaları kategori klasörlerine ayır";
+"settings.notifications" = "Bildirimler";
+"settings.desktopNotifications" = "Masaüstü bildirimleri";
+"settings.desktopNotificationsDesc" = "İndirme tamamlanınca veya başarısız olunca bildirim göster";
+"settings.soundAlerts" = "Ses uyarıları";
+"settings.soundAlertsDesc" = "İndirme tamamlanınca ses çal";
+"settings.autoRetry" = "Otomatik Yeniden Deneme";
+"settings.autoRetryTitle" = "Başarısız indirmeleri otomatik yeniden dene";
+"settings.autoRetryDesc" = "İndirme başarısız olduğunda otomatik olarak yeniden dene";
+"settings.maxRetry" = "Maksimum deneme sayısı";
+"settings.afterComplete" = "İndirme Tamamlandıktan Sonra";
+"settings.actionLabel" = "Eylem";
+"settings.doNothing" = "Hiçbir şey yapma";
+"settings.openFile" = "Dosyayı aç";
+"settings.showInFinder" = "Finder'da göster";
+"settings.theme" = "Tema";
+"settings.system" = "Sistem";
+"settings.dark" = "Karanlık";
+"settings.light" = "Aydınlık";
+"settings.clipboard" = "Pano";
+"settings.monitorClipboard" = "Panoyu izle";
+"settings.monitorClipboardDesc" = "Panodan indirilebilir URL'leri otomatik algıla";
+"settings.scheduledDownloads" = "Planlı İndirmeler";
+"settings.enableScheduled" = "Planlı indirmeleri etkinleştir";
+"settings.enableScheduledDesc" = "İndirmeleri belirli bir zamanda başlamak üzere kuyruğa al";
+"settings.startAt" = "Başlangıç saati";
+"settings.appBehavior" = "Uygulama Davranışı";
+"settings.launchAtLogin" = "Oturum açılınca başlat";
+"settings.launchAtLoginDesc" = "Oturum açtığınızda başlat";
+"settings.startMinimized" = "Küçültülmüş başlat";
+"settings.startMinimizedDesc" = "Başlatıldığında yalnızca menü çubuğunu göster";
+"settings.hideFromDock" = "Dock'tan gizle";
+"settings.hideFromDockDesc" = "Yeniden başlatma gerektirir";
+"settings.showMenuBar" = "Menü çubuğu simgesi göster";
+"settings.showMenuBarDesc" = "Durum çubuğundan hızlı erişim";
+"settings.proxy" = "Proxy";
+"settings.useProxy" = "Proxy kullan";
+"settings.useProxyDesc" = "İndirmeleri proxy sunucu üzerinden yönlendir";
+"settings.safari" = "Safari Uzantısı";
+"settings.extensionInstalled" = "Uzantı Yüklü";
+"settings.safariPath" = "Safari → Ayarlar → Uzantılar → Fetchora";
+"settings.data" = "Veri";
+"settings.clearAll" = "Tüm indirmeleri temizle";
+"settings.clearAllDesc" = "Tüm indirme kayıtlarını sil";
+
+/* About */
+"about.title" = "Hakkında";
+"about.version" = "Sürüm";
+"about.developer" = "Geliştirici";
+"about.developerName" = "Adil Emre";
+"about.license" = "Lisans";
+"about.licenseType" = "Tüm Hakları Saklıdır";
+"about.website" = "Web Sitesi";
+"about.privacyPolicy" = "Gizlilik Politikası";
+"about.support" = "Destek";
+"about.madeWith" = "SwiftUI ile ❤️ yapıldı";
+
+/* Empty States */
+"empty.noActive" = "Aktif İndirme Yok";
+"empty.noCompleted" = "Tamamlanan İndirme Yok";
+"empty.noScheduled" = "Planlı İndirme Yok";
+"empty.noDownloads" = "İndirme Yok";
+"empty.subtitle" = "Safari'den yapılan indirmeler burada görünecek.\nSafari ayarlarından uzantıyı etkinleştirin.";
+
+/* Menu Bar */
+"menubar.activeCount" = "%d aktif";
+"menubar.noActive" = "Aktif indirme yok";
+"menubar.quit" = "Fetchora'dan Çık";
+"menubar.show" = "Fetchora'yı Göster";
+
+/* Onboarding */
+"onboarding.welcome" = "Fetchora'ya Hoş Geldiniz";
+"onboarding.getStarted" = "Başlayın";

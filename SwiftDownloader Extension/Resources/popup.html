@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fetchora</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="popup-container">
+      <div class="header">
+        <div class="logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle
+              cx="12"
+              cy="12"
+              r="11"
+              stroke="url(#grad)"
+              stroke-width="2"
+            />
+            <path
+              d="M12 6v8m0 0l3-3m-3 3l-3-3M8 17h8"
+              stroke="url(#grad)"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <defs>
+              <linearGradient id="grad" x1="0" y1="0" x2="24" y2="24">
+                <stop stop-color="#4F8EF7" />
+                <stop offset="1" stop-color="#6C5CE7" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span class="title">Fetchora</span>
+        </div>
+        <div class="status" id="status">
+          <span class="status-dot"></span>
+          <span class="status-text">Checking...</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="info">
+        <p>
+          Downloads from Safari are automatically intercepted and managed by
+          Fetchora.
+        </p>
+      </div>
+
+      <div class="actions">
+        <button id="openApp" class="btn btn-primary">
+          Open Fetchora
+        </button>
+      </div>
+
+      <div class="footer">
+        <span>v1.0 • Intercepting downloads</span>
+      </div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,494 @@
+import SwiftUI
+import SwiftData
+import UniformTypeIdentifiers
+import CoreSpotlight
+
+struct ContentView: View {
+    @ObservedObject var downloadManager = DownloadManager.shared
+    @ObservedObject var clipboardMonitor = ClipboardMonitor.shared
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage(Constants.Keys.themeMode) private var themeMode = "system"
+    @State private var selectedFilter: SidebarFilter = .all
+    @State private var selectedItem: DownloadItem?
+    @State private var searchText = ""
+    @State private var showAddURL = false
+    @State private var showSettings = false
+    @State private var showBulkURL = false
+    @State private var newURLText = ""
+    @State private var bulkURLText = ""
+    @State private var isDragOver = false
+    @State private var showDuplicateAlert = false
+    @State private var duplicateURL = ""
+    @Query private var allDownloadItems: [DownloadItem]
+    @Environment(\.modelContext) private var modelContext
+
+    private var activeCount: Int { allDownloadItems.filter { $0.status == .downloading || $0.status == .waiting || $0.status == .paused }.count }
+    private var completedCount: Int { allDownloadItems.filter { $0.status == .completed }.count }
+    private var failedCount: Int { allDownloadItems.filter { $0.status == .failed }.count }
+
+    var body: some View {
+        Group {
+            if !hasCompletedOnboarding {
+                OnboardingView()
+            } else {
+                mainView
+            }
+        }
+    }
+
+    private var mainView: some View {
+        NavigationSplitView {
+            sidebarView
+                .navigationSplitViewColumnWidth(min: 200, ideal: Theme.sidebarWidth, max: 280)
+        } detail: {
+            if let item = selectedItem {
+                // Show detail when an item is selected
+                HStack(spacing: 0) {
+                    downloadListPanel
+                    Divider().background(Theme.border)
+                    DownloadDetailView(item: item, onClose: { selectedItem = nil })
+                        .frame(minWidth: 260, idealWidth: 300, maxWidth: 320)
+                }
+            } else {
+                // Full width list when nothing selected
+                downloadListPanel
+            }
+        }
+        .navigationTitle("")
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Button(action: { showAddURL = true }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .help("Add download URL")
+            }
+        }
+        .sheet(isPresented: $showAddURL) {
+            addURLSheet
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+                .frame(width: 680, height: 520)
+                .preferredColorScheme(themeColorScheme)
+        }
+        .onAppear {
+            setupDownloadManager()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("clearAllDownloads"))) { _ in
+            clearAllDownloads()
+        }
+        // Drag & Drop URL
+        .onDrop(of: [.url, .text], isTargeted: $isDragOver) { providers in
+            handleDrop(providers: providers)
+        }
+        .overlay {
+            if isDragOver {
+                ZStack {
+                    Color.black.opacity(0.4)
+                    VStack(spacing: 12) {
+                        Image(systemName: "arrow.down.doc.fill")
+                            .font(.system(size: 48))
+                            .foregroundColor(Theme.primary)
+                        Text("Drop URL to download")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Theme.textPrimary)
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+        }
+        // Keyboard shortcuts
+        .keyboardShortcut("n", modifiers: .command)
+        .preferredColorScheme(themeColorScheme)
+        // Clipboard monitoring popup
+        .sheet(isPresented: $clipboardMonitor.showURLPrompt) {
+            clipboardPromptSheet
+        }
+        // Bulk URL sheet
+        .sheet(isPresented: $showBulkURL) {
+            bulkURLSheet
+        }
+        // Duplicate alert
+        .alert("Duplicate Download", isPresented: $showDuplicateAlert) {
+            Button("Download Anyway") { addDownloadByURLString(duplicateURL, skipDuplicateCheck: true) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This URL has already been downloaded or is downloading. Download again?")
+        }
+        .onAppear {
+            clipboardMonitor.startMonitoring()
+        }
+    }
+
+    private var themeColorScheme: ColorScheme? {
+        switch themeMode {
+        case "dark": return .dark
+        case "light": return .light
+        default: return nil
+        }
+    }
+
+    // MARK: - Download List Panel
+
+    private var downloadListPanel: some View {
+        DownloadListView(
+            selectedFilter: $selectedFilter,
+            searchText: $searchText,
+            selectedItem: $selectedItem
+        )
+    }
+
+    // MARK: - Sidebar
+
+    private var sidebarView: some View {
+        VStack(spacing: 0) {
+            // App branding
+            HStack(spacing: 10) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(Theme.primaryGradient)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Fetchora")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(Theme.textPrimary)
+                    if !downloadManager.activeDownloads.isEmpty {
+                        Text("\(downloadManager.activeDownloads.count) active")
+                            .font(.system(size: 10))
+                            .foregroundColor(Theme.accent)
+                    }
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+
+            Divider().background(Theme.border)
+
+            // Filter sections
+            ScrollView {
+                VStack(alignment: .leading, spacing: 4) {
+                    sectionHeader("Downloads")
+
+                    sidebarRow(title: "All Downloads", icon: "arrow.down.circle", filter: .all, isSelected: selectedFilter == .all, badge: allDownloadItems.count)
+                    sidebarRow(title: "Active", icon: "arrow.down.circle.fill", filter: .active, isSelected: selectedFilter == .active, badge: activeCount)
+                    sidebarRow(title: "Completed", icon: "checkmark.circle.fill", filter: .completed, isSelected: selectedFilter == .completed, badge: completedCount)
+                    sidebarRow(title: "Scheduled", icon: "calendar.circle", filter: .scheduled, isSelected: selectedFilter == .scheduled)
+                    sidebarRow(title: "History", icon: "clock.arrow.circlepath", filter: .history, isSelected: selectedFilter == .history)
+
+                    Divider().background(Theme.border).padding(.vertical, 8)
+
+                    sectionHeader("Categories")
+
+                    ForEach(DownloadCategory.fileCategories) { category in
+                        let count = allDownloadItems.filter { $0.category.rawValue == category.name }.count
+                        sidebarRow(
+                            title: category.name,
+                            icon: category.icon,
+                            filter: category.filter,
+                            isSelected: selectedFilter == category.filter,
+                            badge: count > 0 ? count : nil
+                        )
+                    }
+                }
+                .padding(8)
+            }
+
+            Divider().background(Theme.border)
+
+            // Settings button
+            Button {
+                showSettings = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "gear")
+                        .font(.system(size: 14))
+                        .foregroundColor(Theme.textTertiary)
+                        .frame(width: 20)
+                    Text("Settings")
+                        .font(.system(size: 13))
+                        .foregroundColor(Theme.textSecondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            }
+            .buttonStyle(.plain)
+            .padding(8)
+        }
+        .background(Theme.surfaceSecondary)
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.system(size: 10, weight: .bold))
+            .foregroundColor(Theme.textTertiary)
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+    }
+
+    private func sidebarRow(title: String, icon: String, filter: SidebarFilter, isSelected: Bool, badge: Int? = nil) -> some View {
+        Button {
+            withAnimation(Theme.quickAnimation) {
+                selectedFilter = filter
+                selectedItem = nil
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(isSelected ? Theme.primary : Theme.textTertiary)
+                    .frame(width: 20)
+
+                Text(title)
+                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(isSelected ? Theme.textPrimary : Theme.textSecondary)
+
+                Spacer()
+
+                if let badge = badge, badge > 0 {
+                    Text("\(badge)")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(isSelected ? Theme.primary : Theme.textTertiary.opacity(0.5))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Theme.primary.opacity(0.12) : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Add URL Sheet
+
+    private var addURLSheet: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Add Download")
+                    .font(.system(size: 16, weight: .bold))
+                Spacer()
+                Button("Bulk") { showAddURL = false; showBulkURL = true }
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Theme.primary)
+                    .buttonStyle(.plain)
+                Button("Cancel") { showAddURL = false }
+                    .buttonStyle(.plain)
+                    .foregroundColor(Theme.textSecondary)
+            }
+
+            TextField("Paste download URL here...", text: $newURLText)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 13))
+
+            HStack {
+                Spacer()
+                Button("Download") {
+                    addDownloadFromURL()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(newURLText.isEmpty)
+            }
+        }
+        .padding(24)
+        .frame(width: 460)
+    }
+
+    // MARK: - Bulk URL Sheet
+
+    private var bulkURLSheet: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Bulk Download")
+                    .font(.system(size: 16, weight: .bold))
+                Spacer()
+                Button("Cancel") { showBulkURL = false }
+                    .buttonStyle(.plain)
+                    .foregroundColor(Theme.textSecondary)
+            }
+
+            Text("Paste multiple URLs (one per line):")
+                .font(.system(size: 12))
+                .foregroundColor(Theme.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            TextEditor(text: $bulkURLText)
+                .font(.system(size: 12, design: .monospaced))
+                .frame(height: 160)
+                .border(Theme.border, width: 1)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+
+            HStack {
+                let count = bulkURLText.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty && $0.hasPrefix("http") }.count
+                Text("\(count) URLs detected")
+                    .font(.system(size: 11))
+                    .foregroundColor(Theme.textTertiary)
+                Spacer()
+                Button("Download All") {
+                    addBulkDownloads()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(bulkURLText.isEmpty)
+            }
+        }
+        .padding(24)
+        .frame(width: 500)
+    }
+
+    // MARK: - Clipboard Prompt
+
+    private var clipboardPromptSheet: some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 10) {
+                Image(systemName: "doc.on.clipboard.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(Theme.primary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("URL Detected in Clipboard")
+                        .font(.system(size: 14, weight: .bold))
+                    Text(clipboardMonitor.detectedURL ?? "")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(Theme.textSecondary)
+                        .lineLimit(2)
+                }
+            }
+            HStack(spacing: 12) {
+                Spacer()
+                Button("Ignore") {
+                    clipboardMonitor.ignoreCurrentURL()
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(Theme.textSecondary)
+                Button("Download") {
+                    if let url = clipboardMonitor.detectedURL {
+                        addDownloadByURLString(url)
+                    }
+                    clipboardMonitor.ignoreCurrentURL()
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(24)
+        .frame(width: 420)
+    }
+
+    // MARK: - Helpers
+
+    private func setupDownloadManager() {
+        downloadManager.findItem = { [self] id in
+            let descriptor = FetchDescriptor<DownloadItem>(predicate: #Predicate { $0.id == id })
+            return try? modelContext.fetch(descriptor).first
+        }
+    }
+
+    private func addDownloadFromURL() {
+        addDownloadByURLString(newURLText)
+        newURLText = ""
+        showAddURL = false
+    }
+
+    private func addBulkDownloads() {
+        let urls = bulkURLText.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && $0.hasPrefix("http") }
+
+        for urlString in urls {
+            addDownloadByURLString(urlString)
+        }
+        bulkURLText = ""
+        showBulkURL = false
+    }
+
+    private func clearAllDownloads() {
+        downloadManager.pauseAll()
+
+        let descriptor = FetchDescriptor<DownloadItem>()
+        if let items = try? modelContext.fetch(descriptor) {
+            for item in items {
+                modelContext.delete(item)
+            }
+            try? modelContext.save()
+        }
+        selectedItem = nil
+    }
+
+    private func handleDrop(providers: [NSItemProvider]) -> Bool {
+        for provider in providers {
+            if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                provider.loadItem(forTypeIdentifier: UTType.url.identifier) { item, _ in
+                    if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
+                        DispatchQueue.main.async {
+                            addDownloadByURLString(url.absoluteString)
+                        }
+                    }
+                }
+                return true
+            }
+            if provider.hasItemConformingToTypeIdentifier(UTType.text.identifier) {
+                provider.loadItem(forTypeIdentifier: UTType.text.identifier) { item, _ in
+                    if let text = item as? String, text.hasPrefix("http") {
+                        DispatchQueue.main.async {
+                            addDownloadByURLString(text)
+                        }
+                    }
+                }
+                return true
+            }
+        }
+        return false
+    }
+
+    private func addDownloadByURLString(_ urlString: String, skipDuplicateCheck: Bool = false) {
+        guard let url = URL(string: urlString) else { return }
+
+        // Duplicate detection
+        if !skipDuplicateCheck {
+            let existing = allDownloadItems.first { $0.url == urlString }
+            if existing != nil {
+                duplicateURL = urlString
+                showDuplicateAlert = true
+                return
+            }
+        }
+
+        let fileName = url.lastPathComponent.isEmpty ? "download" : url.lastPathComponent
+        let destination = FileOrganizer.shared.destinationURL(for: fileName)
+        let category = FileCategory.from(extension: url.fileExtensionLowercased)
+
+        let item = DownloadItem(
+            url: urlString,
+            fileName: fileName,
+            destinationPath: destination.path,
+            category: category
+        )
+        modelContext.insert(item)
+        try? modelContext.save()
+        downloadManager.startDownload(item: item)
+
+        // Spotlight indexing
+        indexForSpotlight(item: item)
+    }
+
+    private func indexForSpotlight(item: DownloadItem) {
+        let attributeSet = CSSearchableItemAttributeSet(contentType: .data)
+        attributeSet.title = item.fileName
+        attributeSet.contentDescription = "Downloaded from \(item.url)"
+        attributeSet.addedDate = item.dateAdded
+
+        let searchableItem = CSSearchableItem(
+            uniqueIdentifier: item.id.uuidString,
+            domainIdentifier: "com.adilemre.SwiftDownloader",
+            attributeSet: attributeSet
+        )
+
+        CSSearchableIndex.default().indexSearchableItems([searchableItem])
+    }
+}
