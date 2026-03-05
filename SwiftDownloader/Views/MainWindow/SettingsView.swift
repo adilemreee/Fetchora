@@ -3,7 +3,7 @@ import ServiceManagement
 
 struct SettingsView: View {
     @AppStorage(Constants.Keys.maxConcurrentDownloads) private var maxConcurrent = Constants.defaultMaxConcurrentDownloads
-    @AppStorage(Constants.Keys.speedLimitMBps) private var speedLimit = Constants.defaultSpeedLimitMBps
+    @AppStorage(Constants.Keys.speedLimitPreset) private var speedLimitPreset = Constants.defaultSpeedLimitPreset
     @AppStorage(Constants.Keys.autoCategorizationEnabled) private var autoCategorize = Constants.defaultAutoCategorizationEnabled
     @AppStorage(Constants.Keys.showMenuBarIcon) private var showMenuBar = true
     @AppStorage(Constants.Keys.launchAtLogin) private var launchAtLogin = false
@@ -25,6 +25,12 @@ struct SettingsView: View {
     @AppStorage(Constants.Keys.scheduledDownloadEnabled) private var scheduledEnabled = false
     @AppStorage(Constants.Keys.scheduledDownloadHour) private var scheduledHour = 2
     @AppStorage(Constants.Keys.scheduledDownloadMinute) private var scheduledMinute = 0
+    @AppStorage(Constants.Keys.autoExtractArchives) private var autoExtractArchives = false
+    @AppStorage(Constants.Keys.autoRemoveDeletedFiles) private var autoRemoveDeletedFiles = false
+    @AppStorage(Constants.Keys.autoRemoveCompleted) private var autoRemoveCompleted = false
+    @AppStorage(Constants.Keys.deleteConfirmation) private var deleteConfirmation = "ask"
+    @State private var urlRules: [String] = UserDefaults.standard.stringArray(forKey: Constants.Keys.urlRules) ?? []
+    @State private var newRuleDomain = ""
     @State private var downloadDirectory: String = FileOrganizer.shared.baseDownloadDirectory.path
     @Environment(\.dismiss) private var dismiss
 
@@ -37,6 +43,17 @@ struct SettingsView: View {
         case network = "Network"
         case advanced = "Advanced"
         case about = "About"
+
+        var localizedName: String {
+            switch self {
+            case .general: return NSLocalizedString("settings.general", comment: "")
+            case .downloads: return NSLocalizedString("settings.downloads", comment: "")
+            case .appearance: return NSLocalizedString("settings.appearance", comment: "")
+            case .network: return NSLocalizedString("settings.network", comment: "")
+            case .advanced: return NSLocalizedString("settings.advanced", comment: "")
+            case .about: return NSLocalizedString("settings.about", comment: "")
+            }
+        }
 
         var icon: String {
             switch self {
@@ -67,7 +84,7 @@ struct SettingsView: View {
                                     .font(.system(size: 13))
                                     .foregroundColor(settingsTab == tab ? Theme.primary : Theme.textTertiary)
                                     .frame(width: 18)
-                                Text(tab.rawValue)
+                                Text(tab.localizedName)
                                     .font(.system(size: 12, weight: settingsTab == tab ? .semibold : .regular))
                                     .foregroundColor(settingsTab == tab ? Theme.textPrimary : Theme.textSecondary)
                                 Spacer()
@@ -102,8 +119,10 @@ struct SettingsView: View {
                             fileOrganizationSection
                             autoRetrySection
                             completionActionSection
+                            deleteConfirmationSection
                             clipboardSection
                             scheduledSection
+                            urlRulesSection
                         case .appearance:
                             themeSection
                             appearanceSection
@@ -128,7 +147,7 @@ struct SettingsView: View {
 
     private var headerView: some View {
         HStack {
-            Text("Settings")
+            Text(NSLocalizedString("settings.title", comment: ""))
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Theme.textPrimary)
             Spacer()
@@ -147,7 +166,7 @@ struct SettingsView: View {
     // MARK: - Sections
 
     private var downloadLocationSection: some View {
-        settingsSection("Download Location", icon: "folder.fill") {
+        settingsSection(NSLocalizedString("settings.downloadLocation", comment: ""), icon: "folder.fill") {
             HStack {
                 Text(downloadDirectory)
                     .font(.system(size: 12, design: .monospaced))
@@ -155,7 +174,7 @@ struct SettingsView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer()
-                Button("Change") { chooseDirectory() }
+                Button(NSLocalizedString("action.change", comment: "")) { chooseDirectory() }
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(Theme.primary)
                     .buttonStyle(.plain)
@@ -164,10 +183,10 @@ struct SettingsView: View {
     }
 
     private var performanceSection: some View {
-        settingsSection("Performance", icon: "gauge.high") {
+        settingsSection(NSLocalizedString("settings.performance", comment: ""), icon: "gauge.high") {
             VStack(spacing: 16) {
                 HStack {
-                    Text("Max Concurrent Downloads")
+                    Text(NSLocalizedString("settings.maxConcurrent", comment: ""))
                         .font(.system(size: 13))
                         .foregroundColor(Theme.textPrimary)
                     Spacer()
@@ -177,53 +196,102 @@ struct SettingsView: View {
                     .frame(width: 80)
                 }
 
-                HStack {
-                    Text("Speed Limit")
-                        .font(.system(size: 13))
-                        .foregroundColor(Theme.textPrimary)
-                    Spacer()
-                    HStack(spacing: 6) {
-                        TextField("0", value: $speedLimit, format: .number)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 60)
-                        Text("MB/s")
-                            .font(.system(size: 12))
-                            .foregroundColor(Theme.textTertiary)
+                VStack(spacing: 10) {
+                    HStack {
+                        Text(NSLocalizedString("settings.speedLimit", comment: ""))
+                            .font(.system(size: 13))
+                            .foregroundColor(Theme.textPrimary)
+                        Spacer()
+                    }
+
+                    HStack(spacing: 0) {
+                        speedPresetButton("low", label: NSLocalizedString("speedLimit.low", comment: ""), detail: "512 KB/s", color: .green, isFirst: true)
+                        speedPresetButton("medium", label: NSLocalizedString("speedLimit.medium", comment: ""), detail: "2 MB/s", color: .orange)
+                        speedPresetButton("high", label: NSLocalizedString("speedLimit.high", comment: ""), detail: NSLocalizedString("speedLimit.unlimited", comment: ""), color: .red)
+                        speedPresetButton("custom", label: NSLocalizedString("speedLimit.custom", comment: ""), detail: customSpeedKBps > 0 ? "\(customSpeedKBps) KB/s" : "—", color: Theme.primary, isLast: true)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1))
+
+                    if speedLimitPreset == "custom" {
+                        HStack(spacing: 8) {
+                            Text(NSLocalizedString("speedLimit.downloadSpeed", comment: ""))
+                                .font(.system(size: 12))
+                                .foregroundColor(Theme.textSecondary)
+                            Spacer()
+                            TextField("1024", value: $customSpeedKBps, format: .number)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 80)
+                                .font(.system(size: 12, design: .monospaced))
+                            Text("KB/s")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(Theme.textTertiary)
+                        }
+                        .padding(10)
+                        .background(Theme.primary.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
                 }
-
-                Text("Set to 0 for unlimited speed")
-                    .font(.system(size: 11))
-                    .foregroundColor(Theme.textTertiary)
             }
         }
     }
 
+    @AppStorage(Constants.Keys.speedLimitCustomKBps) private var customSpeedKBps = 1024
+
+    private func speedPresetButton(_ preset: String, label: String, detail: String, color: Color, isFirst: Bool = false, isLast: Bool = false) -> some View {
+        Button {
+            withAnimation(Theme.quickAnimation) { speedLimitPreset = preset }
+        } label: {
+            VStack(spacing: 2) {
+                Text(label)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(speedLimitPreset == preset ? color : Theme.textTertiary)
+                Text(detail)
+                    .font(.system(size: 9))
+                    .foregroundColor(speedLimitPreset == preset ? color.opacity(0.7) : Theme.textTertiary.opacity(0.6))
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            .background(speedLimitPreset == preset ? color.opacity(0.1) : Color.clear)
+            .overlay(
+                Group {
+                    if !isFirst {
+                        Rectangle().fill(Theme.border).frame(width: 1)
+                    } else {
+                        EmptyView()
+                    }
+                },
+                alignment: .leading
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
     private var fileOrganizationSection: some View {
-        settingsSection("File Organization", icon: "folder.badge.gearshape") {
-            settingsToggle(isOn: $autoCategorize, title: "Auto-categorize downloads", subtitle: "Sort files into category folders")
+        settingsSection(NSLocalizedString("settings.fileOrganization", comment: ""), icon: "folder.badge.gearshape") {
+            settingsToggle(isOn: $autoCategorize, title: NSLocalizedString("settings.autoCategorize", comment: ""), subtitle: NSLocalizedString("settings.autoCategorizeDesc", comment: ""))
         }
     }
 
     private var notificationsSection: some View {
-        settingsSection("Notifications", icon: "bell.fill") {
+        settingsSection(NSLocalizedString("settings.notifications", comment: ""), icon: "bell.fill") {
             VStack(spacing: 14) {
-                settingsToggle(isOn: $notificationsEnabled, title: "Desktop notifications", subtitle: "Show notification when download completes or fails")
+                settingsToggle(isOn: $notificationsEnabled, title: NSLocalizedString("settings.desktopNotifications", comment: ""), subtitle: NSLocalizedString("settings.desktopNotificationsDesc", comment: ""))
                 Divider().background(Theme.border)
-                settingsToggle(isOn: $soundEnabled, title: "Sound alerts", subtitle: "Play sound when download completes")
+                settingsToggle(isOn: $soundEnabled, title: NSLocalizedString("settings.soundAlerts", comment: ""), subtitle: NSLocalizedString("settings.soundAlertsDesc", comment: ""))
             }
         }
     }
 
     private var autoRetrySection: some View {
-        settingsSection("Auto Retry", icon: "arrow.clockwise") {
+        settingsSection(NSLocalizedString("settings.autoRetry", comment: ""), icon: "arrow.clockwise") {
             VStack(spacing: 14) {
-                settingsToggle(isOn: $autoRetryEnabled, title: "Auto-retry failed downloads", subtitle: "Automatically retry when a download fails")
+                settingsToggle(isOn: $autoRetryEnabled, title: NSLocalizedString("settings.autoRetryTitle", comment: ""), subtitle: NSLocalizedString("settings.autoRetryDesc", comment: ""))
 
                 if autoRetryEnabled {
                     Divider().background(Theme.border)
                     HStack {
-                        Text("Max retry attempts")
+                        Text(NSLocalizedString("settings.maxRetry", comment: ""))
                             .font(.system(size: 13))
                             .foregroundColor(Theme.textPrimary)
                         Spacer()
@@ -238,28 +306,60 @@ struct SettingsView: View {
     }
 
     private var completionActionSection: some View {
-        settingsSection("After Download Completes", icon: "checkmark.circle.fill") {
+        settingsSection(NSLocalizedString("settings.afterComplete", comment: ""), icon: "checkmark.circle.fill") {
             VStack(spacing: 14) {
-                settingsPickerRow(title: "Action", selection: $completionAction, options: [
-                    ("none", "Do nothing"),
-                    ("openFile", "Open file"),
-                    ("openFolder", "Show in Finder")
+                settingsPickerRow(title: NSLocalizedString("settings.actionLabel", comment: ""), selection: $completionAction, options: [
+                    ("none", NSLocalizedString("settings.doNothing", comment: "")),
+                    ("openFile", NSLocalizedString("settings.openFile", comment: "")),
+                    ("openFolder", NSLocalizedString("settings.showInFinder", comment: ""))
+                ])
+
+                Divider().background(Theme.border)
+
+                settingsToggle(isOn: $autoExtractArchives, title: NSLocalizedString("settings.autoExtract", comment: ""),
+                               subtitle: NSLocalizedString("settings.autoExtractDesc", comment: ""))
+
+                Divider().background(Theme.border)
+
+                settingsToggle(isOn: $autoRemoveCompleted, title: NSLocalizedString("settings.autoRemoveCompleted", comment: ""),
+                               subtitle: NSLocalizedString("settings.autoRemoveCompletedDesc", comment: ""))
+
+                Divider().background(Theme.border)
+
+                settingsToggle(isOn: $autoRemoveDeletedFiles, title: NSLocalizedString("settings.autoRemoveDeleted", comment: ""),
+                               subtitle: NSLocalizedString("settings.autoRemoveDeletedDesc", comment: ""))
+            }
+        }
+    }
+
+    private var deleteConfirmationSection: some View {
+        settingsSection(NSLocalizedString("settings.deleteConfirmation", comment: ""), icon: "trash.circle") {
+            VStack(spacing: 14) {
+                Text(NSLocalizedString("settings.deleteConfirmationDesc", comment: ""))
+                    .font(.system(size: 11))
+                    .foregroundColor(Theme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                settingsPickerRow(title: NSLocalizedString("settings.actionLabel", comment: ""), selection: $deleteConfirmation, options: [
+                    ("ask", NSLocalizedString("settings.deleteAsk", comment: "")),
+                    ("removeOnly", NSLocalizedString("settings.deleteRemoveOnly", comment: "")),
+                    ("deleteFile", NSLocalizedString("settings.deleteAlsoFile", comment: ""))
                 ])
             }
         }
     }
 
     private var themeSection: some View {
-        settingsSection("Theme", icon: "moon.fill") {
+        settingsSection(NSLocalizedString("settings.theme", comment: ""), icon: "moon.fill") {
             HStack {
-                Text("Appearance")
+                Text(NSLocalizedString("settings.appearance", comment: ""))
                     .font(.system(size: 13))
                     .foregroundColor(Theme.textPrimary)
                 Spacer()
                 Picker("", selection: $themeMode) {
-                    Text("System").tag("system")
-                    Text("Dark").tag("dark")
-                    Text("Light").tag("light")
+                    Text(NSLocalizedString("settings.system", comment: "")).tag("system")
+                    Text(NSLocalizedString("settings.dark", comment: "")).tag("dark")
+                    Text(NSLocalizedString("settings.light", comment: "")).tag("light")
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 200)
@@ -268,9 +368,9 @@ struct SettingsView: View {
     }
 
     private var clipboardSection: some View {
-        settingsSection("Clipboard", icon: "doc.on.clipboard") {
-            settingsToggle(isOn: $clipboardMonitoring, title: "Monitor clipboard",
-                           subtitle: "Auto-detect downloadable URLs from clipboard")
+        settingsSection(NSLocalizedString("settings.clipboard", comment: ""), icon: "doc.on.clipboard") {
+            settingsToggle(isOn: $clipboardMonitoring, title: NSLocalizedString("settings.monitorClipboard", comment: ""),
+                           subtitle: NSLocalizedString("settings.monitorClipboardDesc", comment: ""))
                 .onChange(of: clipboardMonitoring) { _, val in
                     if val { ClipboardMonitor.shared.startMonitoring() }
                     else { ClipboardMonitor.shared.stopMonitoring() }
@@ -279,15 +379,15 @@ struct SettingsView: View {
     }
 
     private var scheduledSection: some View {
-        settingsSection("Scheduled Downloads", icon: "calendar.badge.clock") {
+        settingsSection(NSLocalizedString("settings.scheduledDownloads", comment: ""), icon: "calendar.badge.clock") {
             VStack(spacing: 14) {
-                settingsToggle(isOn: $scheduledEnabled, title: "Enable scheduled downloads",
-                               subtitle: "Queue downloads to start at a specific time")
+                settingsToggle(isOn: $scheduledEnabled, title: NSLocalizedString("settings.enableScheduled", comment: ""),
+                               subtitle: NSLocalizedString("settings.enableScheduledDesc", comment: ""))
 
                 if scheduledEnabled {
                     Divider().background(Theme.border)
                     HStack {
-                        Text("Start at")
+                        Text(NSLocalizedString("settings.startAt", comment: ""))
                             .font(.system(size: 13))
                             .foregroundColor(Theme.textPrimary)
                         Spacer()
@@ -311,36 +411,100 @@ struct SettingsView: View {
         }
     }
 
-    private var appBehaviorSection: some View {
-        settingsSection("App Behavior", icon: "gearshape.2.fill") {
+    private var urlRulesSection: some View {
+        settingsSection(NSLocalizedString("rules.title", comment: ""), icon: "link.badge.plus") {
             VStack(spacing: 14) {
-                settingsToggle(isOn: $launchAtLogin, title: "Launch at login", subtitle: "Start when you log in")
+                Text(NSLocalizedString("rules.description", comment: ""))
+                    .font(.system(size: 11))
+                    .foregroundColor(Theme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: 8) {
+                    TextField(NSLocalizedString("rules.domainPlaceholder", comment: ""), text: $newRuleDomain)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 12))
+                    Button(NSLocalizedString("rules.addRule", comment: "")) {
+                        addURLRule()
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Theme.primary)
+                    .buttonStyle(.plain)
+                    .disabled(newRuleDomain.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+
+                if urlRules.isEmpty {
+                    Text(NSLocalizedString("rules.noRules", comment: ""))
+                        .font(.system(size: 12))
+                        .foregroundColor(Theme.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 8)
+                } else {
+                    ForEach(urlRules, id: \.self) { rule in
+                        HStack {
+                            Image(systemName: "globe")
+                                .font(.system(size: 11))
+                                .foregroundColor(Theme.primary)
+                            Text(rule)
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundColor(Theme.textPrimary)
+                            Spacer()
+                            Button(action: { removeURLRule(rule) }) {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Theme.error)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+        }
+    }
+
+    private func addURLRule() {
+        let domain = newRuleDomain.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !domain.isEmpty, !urlRules.contains(domain) else { return }
+        urlRules.append(domain)
+        UserDefaults.standard.set(urlRules, forKey: Constants.Keys.urlRules)
+        newRuleDomain = ""
+    }
+
+    private func removeURLRule(_ rule: String) {
+        urlRules.removeAll { $0 == rule }
+        UserDefaults.standard.set(urlRules, forKey: Constants.Keys.urlRules)
+    }
+
+    private var appBehaviorSection: some View {
+        settingsSection(NSLocalizedString("settings.appBehavior", comment: ""), icon: "gearshape.2.fill") {
+            VStack(spacing: 14) {
+                settingsToggle(isOn: $launchAtLogin, title: NSLocalizedString("settings.launchAtLogin", comment: ""), subtitle: NSLocalizedString("settings.launchAtLoginDesc", comment: ""))
                     .onChange(of: launchAtLogin) { _, val in setLaunchAtLogin(val) }
                 Divider().background(Theme.border)
-                settingsToggle(isOn: $startMinimized, title: "Start minimized", subtitle: "Only show menu bar on launch")
+                settingsToggle(isOn: $startMinimized, title: NSLocalizedString("settings.startMinimized", comment: ""), subtitle: NSLocalizedString("settings.startMinimizedDesc", comment: ""))
                 Divider().background(Theme.border)
-                settingsToggle(isOn: $hideFromDock, title: "Hide from Dock", subtitle: "Requires restart")
+                settingsToggle(isOn: $hideFromDock, title: NSLocalizedString("settings.hideFromDock", comment: ""), subtitle: NSLocalizedString("settings.hideFromDockDesc", comment: ""))
                     .onChange(of: hideFromDock) { _, val in setHideFromDock(val) }
             }
         }
     }
 
     private var appearanceSection: some View {
-        settingsSection("Appearance", icon: "paintbrush.fill") {
-            settingsToggle(isOn: $showMenuBar, title: "Show menu bar icon", subtitle: "Quick access from status bar")
+        settingsSection(NSLocalizedString("settings.appearance", comment: ""), icon: "paintbrush.fill") {
+            settingsToggle(isOn: $showMenuBar, title: NSLocalizedString("settings.showMenuBar", comment: ""), subtitle: NSLocalizedString("settings.showMenuBarDesc", comment: ""))
         }
     }
 
     private var proxySection: some View {
-        settingsSection("Proxy", icon: "network") {
+        settingsSection(NSLocalizedString("settings.proxy", comment: ""), icon: "network") {
             VStack(spacing: 14) {
-                settingsToggle(isOn: $proxyEnabled, title: "Use proxy", subtitle: "Route downloads through a proxy server")
+                settingsToggle(isOn: $proxyEnabled, title: NSLocalizedString("settings.useProxy", comment: ""), subtitle: NSLocalizedString("settings.useProxyDesc", comment: ""))
 
                 if proxyEnabled {
                     Divider().background(Theme.border)
 
                     HStack {
-                        Text("Type")
+                        Text(NSLocalizedString("settings.proxyType", comment: ""))
                             .font(.system(size: 13))
                             .foregroundColor(Theme.textPrimary)
                         Spacer()
@@ -353,12 +517,12 @@ struct SettingsView: View {
                     }
 
                     HStack(spacing: 8) {
-                        TextField("Host (e.g. 127.0.0.1)", text: $proxyHost)
+                        TextField(NSLocalizedString("settings.proxyHost", comment: ""), text: $proxyHost)
                             .textFieldStyle(.roundedBorder)
                             .font(.system(size: 12))
                         Text(":")
                             .foregroundColor(Theme.textTertiary)
-                        TextField("Port", text: $proxyPort)
+                        TextField(NSLocalizedString("settings.proxyPort", comment: ""), text: $proxyPort)
                             .textFieldStyle(.roundedBorder)
                             .font(.system(size: 12))
                             .frame(width: 60)
@@ -366,25 +530,40 @@ struct SettingsView: View {
 
                     Divider().background(Theme.border)
 
-                    Text("Authentication (optional)")
+                    Text(NSLocalizedString("settings.proxyAuth", comment: ""))
                         .font(.system(size: 11))
                         .foregroundColor(Theme.textTertiary)
 
                     HStack(spacing: 8) {
-                        TextField("Username", text: $proxyUsername)
+                        TextField(NSLocalizedString("settings.proxyUsername", comment: ""), text: $proxyUsername)
                             .textFieldStyle(.roundedBorder)
                             .font(.system(size: 12))
-                        SecureField("Password", text: $proxyPassword)
+                        SecureField(NSLocalizedString("settings.proxyPassword", comment: ""), text: $proxyPassword)
                             .textFieldStyle(.roundedBorder)
                             .font(.system(size: 12))
                     }
 
-                    Button("Test Connection") {
+                    Button(NSLocalizedString("settings.testConnection", comment: "")) {
                         testProxyConnection()
                     }
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(Theme.primary)
                     .buttonStyle(.plain)
+
+                    if let result = proxyTestResult {
+                        HStack(spacing: 6) {
+                            Image(systemName: result.contains("success") ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(result.contains("success") ? Theme.accent : Theme.error)
+                            Text(result)
+                                .font(.system(size: 12))
+                                .foregroundColor(result.contains("success") ? Theme.accent : Theme.error)
+                        }
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background((result.contains("success") ? Theme.accent : Theme.error).opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
                 }
             }
         }
@@ -394,7 +573,7 @@ struct SettingsView: View {
 
     private func testProxyConnection() {
         guard !proxyHost.isEmpty, let port = Int(proxyPort), port > 0 else {
-            proxyTestResult = "Invalid host or port"
+            proxyTestResult = NSLocalizedString("settings.invalidHostPort", comment: "")
             return
         }
         proxyTestResult = nil
@@ -404,31 +583,31 @@ struct SettingsView: View {
         testSession.dataTask(with: testURL) { _, response, error in
             DispatchQueue.main.async {
                 if let http = response as? HTTPURLResponse, http.statusCode == 200 {
-                    self.proxyTestResult = "Connected successfully"
+                    self.proxyTestResult = NSLocalizedString("settings.connectedSuccessfully", comment: "")
                 } else {
-                    self.proxyTestResult = error?.localizedDescription ?? "Connection failed"
+                    self.proxyTestResult = error?.localizedDescription ?? NSLocalizedString("settings.connectionFailed", comment: "")
                 }
             }
         }.resume()
     }
 
     private var safariExtensionSection: some View {
-        settingsSection("Safari Extension", icon: "safari.fill") {
+        settingsSection(NSLocalizedString("settings.safari", comment: ""), icon: "safari.fill") {
             VStack(spacing: 14) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
                             Circle().fill(Theme.accent).frame(width: 8, height: 8)
-                            Text("Extension Installed")
+                            Text(NSLocalizedString("settings.extensionInstalled", comment: ""))
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(Theme.accent)
                         }
-                        Text("Safari → Settings → Extensions → Fetchora")
+                        Text(NSLocalizedString("settings.safariPath", comment: ""))
                             .font(.system(size: 11))
                             .foregroundColor(Theme.textTertiary)
                     }
                     Spacer()
-                    Button("Open Settings") {
+                    Button(NSLocalizedString("action.openSettings", comment: "")) {
                         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Safari.Extensions")!)
                     }
                     .font(.system(size: 12, weight: .medium))
@@ -440,18 +619,18 @@ struct SettingsView: View {
     }
 
     private var dangerZoneSection: some View {
-        settingsSection("Data", icon: "trash.fill") {
+        settingsSection(NSLocalizedString("settings.data", comment: ""), icon: "trash.fill") {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Clear all downloads")
+                    Text(NSLocalizedString("settings.clearAll", comment: ""))
                         .font(.system(size: 13))
                         .foregroundColor(Theme.textPrimary)
-                    Text("Remove all download records")
+                    Text(NSLocalizedString("settings.clearAllDesc", comment: ""))
                         .font(.system(size: 11))
                         .foregroundColor(Theme.textTertiary)
                 }
                 Spacer()
-                Button("Clear") {
+                Button(NSLocalizedString("action.clearAll", comment: "")) {
                     NotificationCenter.default.post(name: Notification.Name("clearAllDownloads"), object: nil)
                     dismiss()
                 }
@@ -474,11 +653,11 @@ struct SettingsView: View {
                     .font(.system(size: 56))
                     .foregroundStyle(Theme.primaryGradient)
 
-                Text("Fetchora")
+                Text(NSLocalizedString("app.name", comment: ""))
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(Theme.textPrimary)
 
-                Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")")
+                Text(String(format: NSLocalizedString("app.version", comment: ""), Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"))
                     .font(.system(size: 12))
                     .foregroundColor(Theme.textTertiary)
 
@@ -488,26 +667,26 @@ struct SettingsView: View {
             .padding(.vertical, 8)
 
             // Info rows
-            settingsSection("Info", icon: "info.circle") {
+            settingsSection(NSLocalizedString("about.title", comment: ""), icon: "info.circle") {
                 VStack(spacing: 14) {
-                    aboutRow(label: "Developer", value: "Adil Emre")
+                    aboutRow(label: NSLocalizedString("about.developer", comment: ""), value: NSLocalizedString("about.developerName", comment: ""))
                     Divider().background(Theme.border)
-                    aboutRow(label: "License", value: "All Rights Reserved")
+                    aboutRow(label: NSLocalizedString("about.license", comment: ""), value: NSLocalizedString("about.licenseType", comment: ""))
                     Divider().background(Theme.border)
-                    aboutRow(label: "Platform", value: "macOS 14.0+")
+                    aboutRow(label: NSLocalizedString("about.platform", comment: ""), value: "macOS 14.0+")
                     Divider().background(Theme.border)
-                    aboutRow(label: "Framework", value: "SwiftUI + SwiftData")
+                    aboutRow(label: NSLocalizedString("about.framework", comment: ""), value: "SwiftUI + SwiftData")
                 }
             }
 
             // Links
-            settingsSection("Links", icon: "link") {
+            settingsSection(NSLocalizedString("about.links", comment: ""), icon: "link") {
                 VStack(spacing: 14) {
-                    aboutLink(label: "Website", icon: "globe", url: "https://adilemree.xyz")
+                    aboutLink(label: NSLocalizedString("about.website", comment: ""), icon: "globe", url: "https://adilemree.xyz")
                     Divider().background(Theme.border)
-                    aboutLink(label: "Privacy Policy", icon: "hand.raised.fill", url: "https://adilemree.xyz/privacy")
+                    aboutLink(label: NSLocalizedString("about.privacyPolicy", comment: ""), icon: "hand.raised.fill", url: "https://adilemree.xyz/privacy")
                     Divider().background(Theme.border)
-                    aboutLink(label: "Support", icon: "questionmark.circle", url: "https://adilemree.xyz/support")
+                    aboutLink(label: NSLocalizedString("about.support", comment: ""), icon: "questionmark.circle", url: "https://adilemree.xyz/support")
                 }
             }
         }

@@ -3,22 +3,49 @@ import SwiftData
 import UniformTypeIdentifiers
 import CoreSpotlight
 
+enum SheetType: Identifiable {
+    case addURL
+    case settings
+    case bulkURL
+    case clipboard
+    case duplicateURL
+    case duplicateFile
+
+    var id: String {
+        switch self {
+        case .addURL: return "addURL"
+        case .settings: return "settings"
+        case .bulkURL: return "bulkURL"
+        case .clipboard: return "clipboard"
+        case .duplicateURL: return "duplicateURL"
+        case .duplicateFile: return "duplicateFile"
+        }
+    }
+}
+
 struct ContentView: View {
     @ObservedObject var downloadManager = DownloadManager.shared
     @ObservedObject var clipboardMonitor = ClipboardMonitor.shared
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage(Constants.Keys.themeMode) private var themeMode = "system"
+    @AppStorage(Constants.Keys.autoRemoveDeletedFiles) private var autoRemoveDeletedFiles = false
+    @AppStorage(Constants.Keys.autoRemoveCompleted) private var autoRemoveCompleted = false
     @State private var selectedFilter: SidebarFilter = .all
     @State private var selectedItem: DownloadItem?
     @State private var searchText = ""
-    @State private var showAddURL = false
-    @State private var showSettings = false
-    @State private var showBulkURL = false
+    @State private var activeSheet: SheetType?
     @State private var newURLText = ""
     @State private var bulkURLText = ""
     @State private var isDragOver = false
-    @State private var showDuplicateAlert = false
     @State private var duplicateURL = ""
+    @State private var duplicateExistingItem: DownloadItem?
+    @State private var showFileImporter = false
+    @State private var duplicateFileName = ""
+    @State private var duplicateFileURLString = ""
+    @State private var duplicateFilePath = ""
+    @State private var rememberDuplicateFileChoice = false
+    @State private var pendingSheet: SheetType?
+    @AppStorage("duplicateFileDefaultAction") private var duplicateFileDefaultAction = "" // "", "rename", "overwrite"
     @Query private var allDownloadItems: [DownloadItem]
     @Environment(\.modelContext) private var modelContext
 
@@ -57,26 +84,79 @@ struct ContentView: View {
         .navigationTitle("")
         .toolbar {
             ToolbarItem(placement: .automatic) {
-                Button(action: { showAddURL = true }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .semibold))
+                HStack(spacing: 8) {
+                    Button(action: { activeSheet = .addURL }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .help(NSLocalizedString("action.addDownload", comment: ""))
+
+                    Button(action: { importTXTFile() }) {
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .help(NSLocalizedString("action.importFile", comment: ""))
                 }
-                .help("Add download URL")
             }
         }
-        .sheet(isPresented: $showAddURL) {
-            addURLSheet
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .addURL:
+                addURLSheet
+            case .settings:
+                SettingsView()
+                    .frame(width: 680, height: 520)
+                    .preferredColorScheme(themeColorScheme)
+            case .bulkURL:
+                bulkURLSheet
+            case .clipboard:
+                clipboardPromptSheet
+            case .duplicateURL:
+                duplicateURLSheet
+            case .duplicateFile:
+                duplicateFileSheet
+            }
         }
-        .sheet(isPresented: $showSettings) {
-            SettingsView()
-                .frame(width: 680, height: 520)
-                .preferredColorScheme(themeColorScheme)
+        .onChange(of: activeSheet) { oldVal, newVal in
+            // When a sheet dismisses, check if there's a pending sheet to show
+            if newVal == nil, let pending = pendingSheet {
+                pendingSheet = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    activeSheet = pending
+                }
+            }
         }
         .onAppear {
             setupDownloadManager()
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("clearAllDownloads"))) { _ in
             clearAllDownloads()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("addDownloadURL"))) { notification in
+            if let urlString = notification.userInfo?["url"] as? String {
+                addDownloadByURLString(urlString)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Constants.Notifications.downloadCompleted)) { notification in
+            guard autoRemoveCompleted,
+                  let itemId = notification.userInfo?["itemId"] as? UUID else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                let descriptor = FetchDescriptor<DownloadItem>(predicate: #Predicate { $0.id == itemId })
+                if let item = try? modelContext.fetch(descriptor).first, item.status == .completed {
+                    if selectedItem?.id == item.id { selectedItem = nil }
+                    modelContext.delete(item)
+                    try? modelContext.save()
+                }
+            }
+        }
+        .task {
+            // Periodic check: remove items whose files were deleted from disk
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                if autoRemoveDeletedFiles {
+                    removeDeletedFileItems()
+                }
+            }
         }
         // Drag & Drop URL
         .onDrop(of: [.url, .text], isTargeted: $isDragOver) { providers in
@@ -90,7 +170,7 @@ struct ContentView: View {
                         Image(systemName: "arrow.down.doc.fill")
                             .font(.system(size: 48))
                             .foregroundColor(Theme.primary)
-                        Text("Drop URL to download")
+                        Text(NSLocalizedString("drop.urlToDownload", comment: ""))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(Theme.textPrimary)
                     }
@@ -101,23 +181,20 @@ struct ContentView: View {
         // Keyboard shortcuts
         .keyboardShortcut("n", modifiers: .command)
         .preferredColorScheme(themeColorScheme)
-        // Clipboard monitoring popup
-        .sheet(isPresented: $clipboardMonitor.showURLPrompt) {
-            clipboardPromptSheet
-        }
-        // Bulk URL sheet
-        .sheet(isPresented: $showBulkURL) {
-            bulkURLSheet
-        }
-        // Duplicate alert
-        .alert("Duplicate Download", isPresented: $showDuplicateAlert) {
-            Button("Download Anyway") { addDownloadByURLString(duplicateURL, skipDuplicateCheck: true) }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This URL has already been downloaded or is downloading. Download again?")
+        .onReceive(clipboardMonitor.$showURLPrompt) { show in
+            if show {
+                clipboardMonitor.showURLPrompt = false
+                showSheet(.clipboard)
+            }
         }
         .onAppear {
             clipboardMonitor.startMonitoring()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("loadDemoData"))) { _ in
+            PreviewHelper.populateDemoData(context: modelContext)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("clearDemoData"))) { _ in
+            PreviewHelper.clearDemoData(context: modelContext)
         }
     }
 
@@ -150,11 +227,11 @@ struct ContentView: View {
                     .foregroundStyle(Theme.primaryGradient)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Fetchora")
+                    Text(NSLocalizedString("app.name", comment: ""))
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(Theme.textPrimary)
                     if !downloadManager.activeDownloads.isEmpty {
-                        Text("\(downloadManager.activeDownloads.count) active")
+                        Text(String(format: NSLocalizedString("menubar.activeCount", comment: ""), downloadManager.activeDownloads.count))
                             .font(.system(size: 10))
                             .foregroundColor(Theme.accent)
                     }
@@ -169,17 +246,17 @@ struct ContentView: View {
             // Filter sections
             ScrollView {
                 VStack(alignment: .leading, spacing: 4) {
-                    sectionHeader("Downloads")
+                    sectionHeader(NSLocalizedString("sidebar.downloads", comment: ""))
 
-                    sidebarRow(title: "All Downloads", icon: "arrow.down.circle", filter: .all, isSelected: selectedFilter == .all, badge: allDownloadItems.count)
-                    sidebarRow(title: "Active", icon: "arrow.down.circle.fill", filter: .active, isSelected: selectedFilter == .active, badge: activeCount)
-                    sidebarRow(title: "Completed", icon: "checkmark.circle.fill", filter: .completed, isSelected: selectedFilter == .completed, badge: completedCount)
-                    sidebarRow(title: "Scheduled", icon: "calendar.circle", filter: .scheduled, isSelected: selectedFilter == .scheduled)
-                    sidebarRow(title: "History", icon: "clock.arrow.circlepath", filter: .history, isSelected: selectedFilter == .history)
+                    sidebarRow(title: NSLocalizedString("sidebar.all", comment: ""), icon: "arrow.down.circle", filter: .all, isSelected: selectedFilter == .all, badge: allDownloadItems.count)
+                    sidebarRow(title: NSLocalizedString("sidebar.active", comment: ""), icon: "arrow.down.circle.fill", filter: .active, isSelected: selectedFilter == .active, badge: activeCount)
+                    sidebarRow(title: NSLocalizedString("sidebar.completed", comment: ""), icon: "checkmark.circle.fill", filter: .completed, isSelected: selectedFilter == .completed, badge: completedCount)
+                    sidebarRow(title: NSLocalizedString("sidebar.scheduled", comment: ""), icon: "calendar.circle", filter: .scheduled, isSelected: selectedFilter == .scheduled)
+                    sidebarRow(title: NSLocalizedString("sidebar.history", comment: ""), icon: "clock.arrow.circlepath", filter: .history, isSelected: selectedFilter == .history)
 
                     Divider().background(Theme.border).padding(.vertical, 8)
 
-                    sectionHeader("Categories")
+                    sectionHeader(NSLocalizedString("sidebar.categories", comment: ""))
 
                     ForEach(DownloadCategory.fileCategories) { category in
                         let count = allDownloadItems.filter { $0.category.rawValue == category.name }.count
@@ -191,6 +268,7 @@ struct ContentView: View {
                             badge: count > 0 ? count : nil
                         )
                     }
+
                 }
                 .padding(8)
             }
@@ -199,14 +277,14 @@ struct ContentView: View {
 
             // Settings button
             Button {
-                showSettings = true
+                activeSheet = .settings
             } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "gear")
                         .font(.system(size: 14))
                         .foregroundColor(Theme.textTertiary)
                         .frame(width: 20)
-                    Text("Settings")
+                    Text(NSLocalizedString("settings.title", comment: ""))
                         .font(.system(size: 13))
                         .foregroundColor(Theme.textSecondary)
                     Spacer()
@@ -273,25 +351,25 @@ struct ContentView: View {
     private var addURLSheet: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("Add Download")
+                Text(NSLocalizedString("addDownload.title", comment: ""))
                     .font(.system(size: 16, weight: .bold))
                 Spacer()
-                Button("Bulk") { showAddURL = false; showBulkURL = true }
+                Button(NSLocalizedString("addDownload.bulk", comment: "")) { activeSheet = .bulkURL }
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(Theme.primary)
                     .buttonStyle(.plain)
-                Button("Cancel") { showAddURL = false }
+                Button(NSLocalizedString("action.cancel", comment: "")) { activeSheet = nil }
                     .buttonStyle(.plain)
                     .foregroundColor(Theme.textSecondary)
             }
 
-            TextField("Paste download URL here...", text: $newURLText)
+            TextField(NSLocalizedString("addDownload.placeholder", comment: ""), text: $newURLText)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 13))
 
             HStack {
                 Spacer()
-                Button("Download") {
+                Button(NSLocalizedString("action.download", comment: "")) {
                     addDownloadFromURL()
                 }
                 .buttonStyle(.borderedProminent)
@@ -307,15 +385,15 @@ struct ContentView: View {
     private var bulkURLSheet: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("Bulk Download")
+                Text(NSLocalizedString("addDownload.bulkTitle", comment: ""))
                     .font(.system(size: 16, weight: .bold))
                 Spacer()
-                Button("Cancel") { showBulkURL = false }
+                Button(NSLocalizedString("action.cancel", comment: "")) { activeSheet = nil }
                     .buttonStyle(.plain)
                     .foregroundColor(Theme.textSecondary)
             }
 
-            Text("Paste multiple URLs (one per line):")
+            Text(NSLocalizedString("addDownload.bulkDescription", comment: ""))
                 .font(.system(size: 12))
                 .foregroundColor(Theme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -328,11 +406,11 @@ struct ContentView: View {
 
             HStack {
                 let count = bulkURLText.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty && $0.hasPrefix("http") }.count
-                Text("\(count) URLs detected")
+                Text(String(format: NSLocalizedString("addDownload.urlsDetected", comment: ""), count))
                     .font(.system(size: 11))
                     .foregroundColor(Theme.textTertiary)
                 Spacer()
-                Button("Download All") {
+                Button(NSLocalizedString("action.downloadAll", comment: "")) {
                     addBulkDownloads()
                 }
                 .buttonStyle(.borderedProminent)
@@ -352,7 +430,7 @@ struct ContentView: View {
                     .font(.system(size: 24))
                     .foregroundColor(Theme.primary)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("URL Detected in Clipboard")
+                    Text(NSLocalizedString("clipboard.detected", comment: ""))
                         .font(.system(size: 14, weight: .bold))
                     Text(clipboardMonitor.detectedURL ?? "")
                         .font(.system(size: 11, design: .monospaced))
@@ -362,22 +440,246 @@ struct ContentView: View {
             }
             HStack(spacing: 12) {
                 Spacer()
-                Button("Ignore") {
+                Button(NSLocalizedString("action.ignore", comment: "")) {
                     clipboardMonitor.ignoreCurrentURL()
+                    activeSheet = nil
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(Theme.textSecondary)
-                Button("Download") {
-                    if let url = clipboardMonitor.detectedURL {
-                        addDownloadByURLString(url)
-                    }
+                Button(NSLocalizedString("action.download", comment: "")) {
+                    let url = clipboardMonitor.detectedURL
                     clipboardMonitor.ignoreCurrentURL()
+                    activeSheet = nil
+                    if let url = url {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            addDownloadByURLString(url)
+                        }
+                    }
                 }
                 .buttonStyle(.borderedProminent)
             }
         }
         .padding(24)
         .frame(width: 420)
+    }
+
+    // MARK: - Duplicate URL Sheet
+
+    private var duplicateURLSheet: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.orange)
+                Text(NSLocalizedString("duplicate.download.title", comment: ""))
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(Theme.textPrimary)
+                Spacer()
+                Button(action: { activeSheet = nil }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(Color.gray)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.bottom, 16)
+
+            // Info card
+            VStack(alignment: .leading, spacing: 10) {
+                infoRow(label: NSLocalizedString("detail.url", comment: ""), value: duplicateURL)
+
+                if let existing = duplicateExistingItem {
+                    Divider().background(Theme.border)
+                    infoRow(label: NSLocalizedString("duplicate.path", comment: ""), value: existing.destinationPath)
+
+                    if existing.totalBytes > 0 {
+                        Divider().background(Theme.border)
+                        infoRow(label: NSLocalizedString("duplicate.size", comment: ""), value: existing.totalBytes.formattedFileSize)
+                    }
+
+                    Divider().background(Theme.border)
+                    infoRow(label: NSLocalizedString("duplicate.dateAdded", comment: ""), value: existing.dateAdded.shortFormatted)
+                }
+            }
+            .padding(14)
+            .background(Theme.surfaceSecondary)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Theme.border, lineWidth: 1)
+            )
+            .padding(.bottom, 20)
+
+            // Buttons
+            HStack(spacing: 10) {
+                Spacer()
+                Button(action: { activeSheet = nil }) {
+                    Text(NSLocalizedString("duplicate.skip", comment: ""))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Theme.textSecondary)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(Theme.surfaceTertiary)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+
+                Button(action: {
+                    let url = duplicateURL
+                    activeSheet = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        addDownloadByURLString(url, skipDuplicateCheck: true)
+                    }
+                }) {
+                    Text(NSLocalizedString("duplicate.download", comment: ""))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(Theme.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(24)
+        .frame(width: 500)
+    }
+
+    // MARK: - Duplicate File Sheet
+
+    private var duplicateFileSheet: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack(spacing: 10) {
+                Image(systemName: "doc.on.doc.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.orange)
+                Text(NSLocalizedString("duplicate.file.title", comment: ""))
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(Theme.textPrimary)
+                Spacer()
+                Button(action: { activeSheet = nil }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(Color.gray)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.bottom, 16)
+
+            // Path card
+            HStack(spacing: 8) {
+                Image(systemName: "folder.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(Theme.primary)
+                Text(duplicateFilePath)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundColor(Theme.textPrimary)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surfaceSecondary)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Theme.border, lineWidth: 1)
+            )
+            .padding(.bottom, 14)
+
+            // Remember toggle
+            Toggle(isOn: $rememberDuplicateFileChoice) {
+                Text(NSLocalizedString("duplicate.rememberChoice", comment: ""))
+                    .font(.system(size: 12))
+                    .foregroundColor(Theme.textSecondary)
+            }
+            .toggleStyle(.checkbox)
+            .padding(.bottom, 18)
+
+            // Buttons
+            HStack(spacing: 10) {
+                Spacer()
+
+                Button(action: {
+                    if rememberDuplicateFileChoice { duplicateFileDefaultAction = "rename" }
+                    let url = duplicateFileURLString
+                    activeSheet = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        addDownloadByURLString(url, skipDuplicateCheck: true, skipFileNameCheck: true, autoRename: true)
+                    }
+                }) {
+                    Text(NSLocalizedString("duplicate.rename", comment: ""))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(Theme.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+
+                Button(action: {
+                    if rememberDuplicateFileChoice { duplicateFileDefaultAction = "overwrite" }
+                    let url = duplicateFileURLString
+                    activeSheet = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        addDownloadByURLString(url, skipDuplicateCheck: true, skipFileNameCheck: true)
+                    }
+                }) {
+                    Text(NSLocalizedString("duplicate.overwrite", comment: ""))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Theme.textPrimary)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(Theme.surfaceTertiary)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+
+                Button(action: { activeSheet = nil }) {
+                    Text(NSLocalizedString("duplicate.cancel", comment: ""))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Theme.textSecondary)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(Theme.surfaceTertiary)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(24)
+        .frame(width: 500)
+    }
+
+    private func infoRow(label: String, value: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(label)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(Theme.textSecondary)
+                .frame(width: 80, alignment: .trailing)
+            Text(value)
+                .font(.system(size: 12))
+                .foregroundColor(Theme.textPrimary)
+                .lineLimit(2)
+                .truncationMode(.middle)
+                .textSelection(.enabled)
+        }
+    }
+
+    // MARK: - Sheet Management
+    
+    private func showSheet(_ type: SheetType) {
+        if activeSheet != nil {
+            // Another sheet is open — queue this one
+            pendingSheet = type
+            activeSheet = nil
+        } else {
+            activeSheet = type
+        }
     }
 
     // MARK: - Helpers
@@ -387,12 +689,28 @@ struct ContentView: View {
             let descriptor = FetchDescriptor<DownloadItem>(predicate: #Predicate { $0.id == id })
             return try? modelContext.fetch(descriptor).first
         }
+
+        // Wire up SchedulerService to use SwiftData items
+        let scheduler = SchedulerService.shared
+        scheduler.fetchScheduledItems = { [self] in
+            let scheduledStatus = DownloadStatus.scheduled
+            let descriptor = FetchDescriptor<DownloadItem>(predicate: #Predicate { $0.status == scheduledStatus })
+            return (try? modelContext.fetch(descriptor)) ?? []
+        }
+        scheduler.startDownloadHandler = { [weak downloadManager] item in
+            downloadManager?.startDownload(item: item)
+        }
     }
 
     private func addDownloadFromURL() {
-        addDownloadByURLString(newURLText)
+        let url = newURLText
         newURLText = ""
-        showAddURL = false
+        activeSheet = nil
+        pendingSheet = nil
+        // Delay so the add-URL sheet fully dismisses before a duplicate sheet can present
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            self.addDownloadByURLString(url)
+        }
     }
 
     private func addBulkDownloads() {
@@ -400,11 +718,13 @@ struct ContentView: View {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty && $0.hasPrefix("http") }
 
-        for urlString in urls {
-            addDownloadByURLString(urlString)
-        }
         bulkURLText = ""
-        showBulkURL = false
+        activeSheet = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            for urlString in urls {
+                self.addDownloadByURLString(urlString)
+            }
+        }
     }
 
     private func clearAllDownloads() {
@@ -446,20 +766,56 @@ struct ContentView: View {
         return false
     }
 
-    private func addDownloadByURLString(_ urlString: String, skipDuplicateCheck: Bool = false) {
+    private func addDownloadByURLString(_ urlString: String, skipDuplicateCheck: Bool = false, skipFileNameCheck: Bool = false, autoRename: Bool = false) {
         guard let url = URL(string: urlString) else { return }
 
-        // Duplicate detection
+        // Duplicate URL detection
         if !skipDuplicateCheck {
-            let existing = allDownloadItems.first { $0.url == urlString }
-            if existing != nil {
+            if let existing = allDownloadItems.first(where: { $0.url == urlString }) {
                 duplicateURL = urlString
-                showDuplicateAlert = true
+                duplicateExistingItem = existing
+                showSheet(.duplicateURL)
                 return
             }
         }
 
-        let fileName = url.lastPathComponent.isEmpty ? "download" : url.lastPathComponent
+        var fileName = url.lastPathComponent.isEmpty ? "download" : url.lastPathComponent
+
+        // Duplicate filename detection
+        if !skipFileNameCheck {
+            if allDownloadItems.contains(where: { $0.fileName == fileName }) {
+                let dest = FileOrganizer.shared.destinationURL(for: fileName)
+                duplicateFileName = fileName
+                duplicateFileURLString = urlString
+                duplicateFilePath = dest.path
+
+                // Auto-apply remembered choice
+                if duplicateFileDefaultAction == "rename" {
+                    addDownloadByURLString(urlString, skipDuplicateCheck: true, skipFileNameCheck: true, autoRename: true)
+                    return
+                } else if duplicateFileDefaultAction == "overwrite" {
+                    addDownloadByURLString(urlString, skipDuplicateCheck: true, skipFileNameCheck: true)
+                    return
+                }
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.showSheet(.duplicateFile)
+                }
+                return
+            }
+        }
+
+        // Auto-rename: append (1), (2), etc.
+        if autoRename {
+            let baseName = (fileName as NSString).deletingPathExtension
+            let ext = (fileName as NSString).pathExtension
+            var counter = 1
+            while allDownloadItems.contains(where: { $0.fileName == fileName }) {
+                fileName = ext.isEmpty ? "\(baseName) (\(counter))" : "\(baseName) (\(counter)).\(ext)"
+                counter += 1
+            }
+        }
+
         let destination = FileOrganizer.shared.destinationURL(for: fileName)
         let category = FileCategory.from(extension: url.fileExtensionLowercased)
 
@@ -477,10 +833,31 @@ struct ContentView: View {
         indexForSpotlight(item: item)
     }
 
+    private func importTXTFile() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.plainText]
+        panel.title = NSLocalizedString("action.importFile", comment: "")
+
+        guard panel.runModal() == .OK, let fileURL = panel.url else { return }
+
+        guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else { return }
+
+        let urls = content.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && $0.hasPrefix("http") }
+
+        for urlString in urls {
+            addDownloadByURLString(urlString)
+        }
+    }
+
     private func indexForSpotlight(item: DownloadItem) {
         let attributeSet = CSSearchableItemAttributeSet(contentType: .data)
         attributeSet.title = item.fileName
-        attributeSet.contentDescription = "Downloaded from \(item.url)"
+        attributeSet.contentDescription = item.url
         attributeSet.addedDate = item.dateAdded
 
         let searchableItem = CSSearchableItem(
@@ -490,5 +867,16 @@ struct ContentView: View {
         )
 
         CSSearchableIndex.default().indexSearchableItems([searchableItem])
+    }
+
+    private func removeDeletedFileItems() {
+        let completedItems = allDownloadItems.filter { $0.status == .completed }
+        for item in completedItems {
+            if !item.destinationPath.isEmpty && !FileManager.default.fileExists(atPath: item.destinationPath) {
+                if selectedItem?.id == item.id { selectedItem = nil }
+                modelContext.delete(item)
+            }
+        }
+        try? modelContext.save()
     }
 }

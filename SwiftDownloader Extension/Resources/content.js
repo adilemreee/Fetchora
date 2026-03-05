@@ -62,10 +62,23 @@
     showInterceptNotification(fileName);
   }
 
+  // Cache interception state for synchronous access in click handler
+  let interceptEnabled = true;
+  browser.storage.local.get("interceptEnabled", (result) => {
+    interceptEnabled = result.interceptEnabled !== false;
+  });
+  browser.storage.onChanged.addListener((changes) => {
+    if (changes.interceptEnabled) {
+      interceptEnabled = changes.interceptEnabled.newValue !== false;
+    }
+  });
+
   // Listen for clicks on links
   document.addEventListener(
     "click",
     function (event) {
+      if (!interceptEnabled) return;
+
       const link = event.target.closest("a[href]");
       if (!link) return;
 

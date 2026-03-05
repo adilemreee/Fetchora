@@ -58,7 +58,7 @@ struct DownloadDetailView: View {
                 HStack(spacing: 6) {
                     StatusBadge(status: item.status)
                     if item.safePriority != .normal {
-                        Text(item.safePriority.rawValue)
+                        Text(item.safePriority.localizedName)
                             .font(.system(size: 9, weight: .bold))
                             .foregroundColor(item.safePriority == .high ? Theme.error : Theme.textTertiary)
                             .padding(.horizontal, 6)
@@ -97,7 +97,7 @@ struct DownloadDetailView: View {
                             .font(.system(size: 14, weight: .semibold, design: .monospaced))
                             .foregroundColor(Theme.textPrimary)
                         if !eta.isInfinite {
-                            Text("\(eta.formattedETA) remaining")
+                            Text(String(format: NSLocalizedString("detail.remaining", comment: ""), eta.formattedETA))
                                 .font(.system(size: 12))
                                 .foregroundColor(Theme.textTertiary)
                         }
@@ -106,7 +106,7 @@ struct DownloadDetailView: View {
             }
 
             if item.totalBytes > 0 {
-                Text("\(item.downloadedBytes.formattedFileSize) of \(item.totalBytes.formattedFileSize)")
+                Text("\(item.downloadedBytes.formattedFileSize) / \(item.totalBytes.formattedFileSize)")
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundColor(Theme.textSecondary)
             }
@@ -120,25 +120,25 @@ struct DownloadDetailView: View {
 
     private var infoSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Details")
+            Text(NSLocalizedString("detail.details", comment: ""))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(Theme.textSecondary)
 
-            infoRow(label: "URL", value: item.url)
-            infoRow(label: "Category", value: item.category.rawValue)
-            infoRow(label: "Added", value: item.dateAdded.shortFormatted)
+            infoRow(label: NSLocalizedString("detail.url", comment: ""), value: item.url)
+            infoRow(label: NSLocalizedString("detail.category", comment: ""), value: item.category.localizedName)
+            infoRow(label: NSLocalizedString("detail.added", comment: ""), value: item.dateAdded.shortFormatted)
 
             if let completed = item.dateCompleted {
-                infoRow(label: "Completed", value: completed.shortFormatted)
+                infoRow(label: NSLocalizedString("detail.completed", comment: ""), value: completed.shortFormatted)
             }
             if item.status == .completed {
-                infoRow(label: "Location", value: item.destinationPath)
+                infoRow(label: NSLocalizedString("detail.location", comment: ""), value: item.destinationPath)
             }
             if item.totalBytes > 0 {
-                infoRow(label: "File Size", value: item.totalBytes.formattedFileSize)
+                infoRow(label: NSLocalizedString("detail.fileSize", comment: ""), value: item.totalBytes.formattedFileSize)
             }
             if let error = item.errorMessage {
-                infoRow(label: "Error", value: error, valueColor: Theme.error)
+                infoRow(label: NSLocalizedString("detail.error", comment: ""), value: error, valueColor: Theme.error)
             }
         }
     }
@@ -160,7 +160,7 @@ struct DownloadDetailView: View {
 
     private var hashSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("File Integrity")
+            Text(NSLocalizedString("detail.fileIntegrity", comment: ""))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(Theme.textSecondary)
 
@@ -172,7 +172,7 @@ struct DownloadDetailView: View {
                 }
                 .frame(width: 100)
 
-                TextField("Expected hash (optional)", text: $hashInput)
+                TextField(NSLocalizedString("detail.hashPlaceholder", comment: ""), text: $hashInput)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 11, design: .monospaced))
 
@@ -181,7 +181,7 @@ struct DownloadDetailView: View {
                         ProgressView()
                             .scaleEffect(0.7)
                     } else {
-                        Text("Verify")
+                        Text(NSLocalizedString("detail.verify", comment: ""))
                             .font(.system(size: 11, weight: .medium))
                     }
                 }
@@ -217,8 +217,8 @@ struct DownloadDetailView: View {
             } else {
                 let result = await HashVerifier.verify(fileAt: url, expectedHash: expected, type: type)
                 hashResult = result.matches
-                    ? "✓ Hash matches! \(result.computed)"
-                    : "✗ Mismatch: \(result.computed)"
+                    ? "✓ \(result.computed)"
+                    : "✗ \(result.computed)"
             }
             isVerifyingHash = false
         }
@@ -230,28 +230,28 @@ struct DownloadDetailView: View {
         HStack(spacing: 12) {
             switch item.status {
             case .downloading:
-                actionBtn("Pause", icon: "pause.fill", color: Theme.warning) {
+                actionBtn(NSLocalizedString("action.pause", comment: ""), icon: "pause.fill", color: Theme.warning) {
                     downloadManager.pauseDownload(item: item)
                 }
-                actionBtn("Cancel", icon: "xmark", color: Theme.error) {
+                actionBtn(NSLocalizedString("action.cancel", comment: ""), icon: "xmark", color: Theme.error) {
                     downloadManager.cancelDownload(item: item)
                 }
             case .paused:
-                actionBtn("Resume", icon: "play.fill", color: Theme.accent) {
+                actionBtn(NSLocalizedString("action.resume", comment: ""), icon: "play.fill", color: Theme.accent) {
                     downloadManager.resumeDownload(item: item)
                 }
-                actionBtn("Cancel", icon: "xmark", color: Theme.error) {
+                actionBtn(NSLocalizedString("action.cancel", comment: ""), icon: "xmark", color: Theme.error) {
                     downloadManager.cancelDownload(item: item)
                 }
             case .failed, .cancelled:
-                actionBtn("Retry", icon: "arrow.clockwise", color: Theme.primary) {
+                actionBtn(NSLocalizedString("action.retry", comment: ""), icon: "arrow.clockwise", color: Theme.primary) {
                     downloadManager.retryDownload(item: item)
                 }
             case .completed:
-                actionBtn("Show in Finder", icon: "folder", color: Theme.textSecondary) {
+                actionBtn(NSLocalizedString("action.showInFinder", comment: ""), icon: "folder", color: Theme.textSecondary) {
                     NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: item.destinationPath)])
                 }
-                actionBtn("Open", icon: "arrow.up.forward.square", color: Theme.primary) {
+                actionBtn(NSLocalizedString("action.open", comment: ""), icon: "arrow.up.forward.square", color: Theme.primary) {
                     NSWorkspace.shared.open(URL(fileURLWithPath: item.destinationPath))
                 }
             default:

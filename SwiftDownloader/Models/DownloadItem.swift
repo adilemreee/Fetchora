@@ -22,6 +22,18 @@ enum DownloadStatus: String, Codable {
         }
     }
 
+    var localizedName: String {
+        switch self {
+        case .waiting: return NSLocalizedString("status.waiting", comment: "")
+        case .downloading: return NSLocalizedString("status.downloading", comment: "")
+        case .paused: return NSLocalizedString("status.paused", comment: "")
+        case .completed: return NSLocalizedString("status.completed", comment: "")
+        case .failed: return NSLocalizedString("status.failed", comment: "")
+        case .cancelled: return NSLocalizedString("status.cancelled", comment: "")
+        case .scheduled: return NSLocalizedString("status.scheduled", comment: "")
+        }
+    }
+
     var isActive: Bool {
         self == .downloading || self == .waiting
     }
@@ -31,6 +43,14 @@ enum DownloadPriority: String, Codable, CaseIterable {
     case high = "High"
     case normal = "Normal"
     case low = "Low"
+
+    var localizedName: String {
+        switch self {
+        case .high: return NSLocalizedString("priority.high", comment: "")
+        case .normal: return NSLocalizedString("priority.normal", comment: "")
+        case .low: return NSLocalizedString("priority.low", comment: "")
+        }
+    }
 
     var sortOrder: Int {
         switch self {

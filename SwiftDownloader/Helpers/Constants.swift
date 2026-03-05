@@ -5,8 +5,8 @@ enum Constants {
     static let appGroupIdentifier = "group.com.adilemre.SwiftDownloader"
 
     // Download defaults
-    static let defaultMaxConcurrentDownloads = 3
-    static let defaultSpeedLimitMBps: Double = 0 // 0 = unlimited
+    static let defaultMaxConcurrentDownloads = 1
+    static let defaultSpeedLimitPreset: String = "high" // high = unlimited
     static let defaultAutoCategorizationEnabled = true
 
     // File categories with extensions
@@ -36,7 +36,8 @@ enum Constants {
     enum Keys {
         static let downloadDirectory = "downloadDirectory"
         static let maxConcurrentDownloads = "maxConcurrentDownloads"
-        static let speedLimitMBps = "speedLimitMBps"
+        static let speedLimitPreset = "speedLimitPreset"
+        static let speedLimitCustomKBps = "speedLimitCustomKBps"
         static let autoCategorizationEnabled = "autoCategorizationEnabled"
         static let showMenuBarIcon = "showMenuBarIcon"
         static let launchAtLogin = "launchAtLogin"
@@ -58,6 +59,11 @@ enum Constants {
         static let scheduledDownloadEnabled = "scheduledDownloadEnabled"
         static let scheduledDownloadHour = "scheduledDownloadHour"
         static let scheduledDownloadMinute = "scheduledDownloadMinute"
+        static let autoExtractArchives = "autoExtractArchives"
+        static let urlRules = "urlRules"
+        static let autoRemoveDeletedFiles = "autoRemoveDeletedFiles"
+        static let autoRemoveCompleted = "autoRemoveCompleted"
+        static let deleteConfirmation = "deleteConfirmation" // ask, removeOnly, deleteFile
     }
 
     // Notification names
@@ -78,6 +84,19 @@ enum FileCategory: String, CaseIterable, Codable {
     case application = "Applications"
     case code = "Code"
     case other = "Other"
+
+    var localizedName: String {
+        switch self {
+        case .video: return NSLocalizedString("category.videos", comment: "")
+        case .audio: return NSLocalizedString("category.music", comment: "")
+        case .document: return NSLocalizedString("category.documents", comment: "")
+        case .image: return NSLocalizedString("category.images", comment: "")
+        case .archive: return NSLocalizedString("category.archives", comment: "")
+        case .application: return NSLocalizedString("category.applications", comment: "")
+        case .code: return NSLocalizedString("category.code", comment: "")
+        case .other: return NSLocalizedString("category.other", comment: "")
+        }
+    }
 
     var iconName: String {
         switch self {

@@ -56,7 +56,7 @@ struct MiniDownloadRow: View {
             }
             .buttonStyle(.plain)
         } else if item.status == .paused {
-            Button(action: { downloadManager.resumeDownload(item: item) }) {
+            Button(action: { downloadManager.resumeDownload(item: item, force: true) }) {
                 Image(systemName: "play.fill")
                     .font(.system(size: 10))
                     .foregroundColor(Theme.accent)
@@ -99,12 +99,12 @@ struct MenuBarView: View {
                 .foregroundStyle(Theme.primaryGradient)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Fetchora")
+                Text(NSLocalizedString("app.name", comment: ""))
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(Theme.textPrimary)
 
                 if !activeItems.isEmpty {
-                    Text("\(activeItems.count) active · \(downloadManager.totalSpeed.formattedSpeed)")
+                    Text(String(format: NSLocalizedString("menubar.activeCount", comment: ""), activeItems.count) + " · " + downloadManager.totalSpeed.formattedSpeed)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(Theme.accent)
                 }
@@ -127,7 +127,7 @@ struct MenuBarView: View {
                 Image(systemName: "checkmark.circle")
                     .font(.system(size: 32, weight: .thin))
                     .foregroundColor(Theme.accent)
-                Text("No active downloads")
+                Text(NSLocalizedString("menuBar.noActive", comment: ""))
                     .font(.system(size: 12))
                     .foregroundColor(Theme.textTertiary)
             }
@@ -149,17 +149,26 @@ struct MenuBarView: View {
     private var footerSection: some View {
         HStack(spacing: 16) {
             if !activeItems.isEmpty {
-                Button("Pause All") {
+                Button(NSLocalizedString("action.pauseAll", comment: "")) {
                     downloadManager.pauseAll()
                 }
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(Theme.warning)
                 .buttonStyle(.plain)
+
+                if activeItems.contains(where: { $0.status == .paused }) {
+                    Button(NSLocalizedString("action.resumeAll", comment: "")) {
+                        downloadManager.resumeAll(items: activeItems)
+                    }
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(Theme.accent)
+                    .buttonStyle(.plain)
+                }
             }
 
             Spacer()
 
-            Button("Open Fetchora") {
+            Button(NSLocalizedString("menuBar.openApp", comment: "")) {
                 if let window = NSApp.windows.first(where: { $0.canBecomeMain && !($0 is NSPanel) }) {
                     window.makeKeyAndOrderFront(nil)
                     if window.isMiniaturized { window.deminiaturize(nil) }

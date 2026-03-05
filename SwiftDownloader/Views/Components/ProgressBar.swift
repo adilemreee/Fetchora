@@ -85,7 +85,7 @@ struct StatusBadge: View {
             Circle()
                 .fill(color)
                 .frame(width: 6, height: 6)
-            Text(status.rawValue)
+            Text(status.localizedName)
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(color)
         }

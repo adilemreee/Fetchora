@@ -23,6 +23,7 @@ class DownloadManager: NSObject, ObservableObject {
     private var downloadToItem: [Int: UUID] = [:]
     private var lastUIUpdateTime: [UUID: CFAbsoluteTime] = [:]
     private var retryAttempts: [UUID: Int] = [:]
+    private var throttleTimer: Timer?
 
     var maxConcurrentDownloads: Int {
         get { UserDefaults.standard.integer(forKey: Constants.Keys.maxConcurrentDownloads).clamped(to: 1...10) }
@@ -30,8 +31,15 @@ class DownloadManager: NSObject, ObservableObject {
     }
 
     var speedLimitBytesPerSecond: Double {
-        let mbps = UserDefaults.standard.double(forKey: Constants.Keys.speedLimitMBps)
-        return mbps > 0 ? mbps * 1024 * 1024 : 0
+        let preset = UserDefaults.standard.string(forKey: Constants.Keys.speedLimitPreset) ?? "high"
+        switch preset {
+        case "low": return 512 * 1024              // 512 KB/s
+        case "medium": return 2 * 1024 * 1024      // 2 MB/s
+        case "custom":
+            let kbps = UserDefaults.standard.double(forKey: Constants.Keys.speedLimitCustomKBps)
+            return kbps > 0 ? kbps * 1024 : 0
+        default: return 0 // "high" = unlimited
+        }
     }
 
     private override init() {
@@ -56,6 +64,114 @@ class DownloadManager: NSObject, ObservableObject {
 
         // Initialize notification service
         _ = NotificationService.shared
+
+        // Start speed throttle timer
+        startThrottleTimer()
+    }
+
+    // MARK: - Speed Throttling
+
+    private func startThrottleTimer() {
+        throttleTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.enforceSpeedLimit()
+            }
+        }
+    }
+
+    private var throttledTaskIds: Set<UUID> = []
+    private var throttleSuspended = false
+    private var suspendedAt: CFAbsoluteTime = 0
+    private var suspendDuration: TimeInterval = 0
+    private var bytesAtLastResume: Int64 = 0
+    private var timeAtLastResume: CFAbsoluteTime = 0
+
+    private func enforceSpeedLimit() {
+        let limit = speedLimitBytesPerSecond
+        guard limit > 0 else {
+            if throttleSuspended {
+                resumeAllThrottled()
+                throttleSuspended = false
+            }
+            throttledTaskIds.removeAll()
+            resetThrottleState()
+            return
+        }
+
+        guard !activeDownloads.isEmpty else {
+            resetThrottleState()
+            return
+        }
+
+        let now = CFAbsoluteTimeGetCurrent()
+
+        // If suspended, check if it's time to resume
+        if throttleSuspended {
+            if now - suspendedAt >= suspendDuration {
+                resumeAllThrottled()
+                throttleSuspended = false
+                bytesAtLastResume = activeDownloads.values.reduce(Int64(0)) { $0 + $1.downloadedBytes }
+                timeAtLastResume = now
+            }
+            return
+        }
+
+        // Initialize on first tick
+        if timeAtLastResume == 0 {
+            bytesAtLastResume = activeDownloads.values.reduce(Int64(0)) { $0 + $1.downloadedBytes }
+            timeAtLastResume = now
+            return
+        }
+
+        let currentBytes = activeDownloads.values.reduce(Int64(0)) { $0 + $1.downloadedBytes }
+        let bytesSinceResume = Double(currentBytes - bytesAtLastResume)
+        let timeSinceResume = now - timeAtLastResume
+        guard timeSinceResume > 0.1 else { return } // Need 100ms minimum for measurement
+
+        let currentRate = bytesSinceResume / timeSinceResume
+
+        if currentRate > limit * 1.05 {
+            // Over budget — proportional suspend: higher overshoot = longer pause
+            let ratio = limit / currentRate  // 0..1 — what fraction of time to stay active
+            suspendDuration = max((1.0 - ratio) * 0.4, 0.05) // 50ms-400ms range
+            suspendDuration = min(suspendDuration, 0.5) // Hard cap at 500ms to avoid timeouts
+            suspendedAt = now
+            suspendAllActive()
+            throttleSuspended = true
+        } else if timeSinceResume > 2.0 {
+            // Reset measurement window periodically for accuracy
+            bytesAtLastResume = currentBytes
+            timeAtLastResume = now
+        }
+    }
+
+    private func resetThrottleState() {
+        bytesAtLastResume = 0
+        timeAtLastResume = 0
+        suspendedAt = 0
+        suspendDuration = 0
+    }
+
+    private func suspendAllActive() {
+        for (id, info) in activeDownloads {
+            if let task = info.task {
+                task.suspend()
+            } else if SegmentedDownloadManager.shared.isSegmented(id) {
+                SegmentedDownloadManager.shared.throttleSuspend(itemId: id)
+            }
+            throttledTaskIds.insert(id)
+        }
+    }
+
+    private func resumeAllThrottled() {
+        for id in throttledTaskIds {
+            if let task = activeDownloads[id]?.task {
+                task.resume()
+            } else if SegmentedDownloadManager.shared.isSegmented(id) {
+                SegmentedDownloadManager.shared.throttleResume(itemId: id)
+            }
+        }
+        throttledTaskIds.removeAll()
     }
 
     private func createSession() -> URLSession {
@@ -130,8 +246,21 @@ class DownloadManager: NSObject, ObservableObject {
         }
     }
 
-    func resumeDownload(item: DownloadItem) {
-        if activeDownloads.count >= maxConcurrentDownloads {
+    /// Force-start a waiting download, bypassing the concurrent limit.
+    func forceStartDownload(item: DownloadItem) {
+        // Remove from pending queue if present
+        pendingQueue.removeAll { $0.id == item.id }
+
+        guard let url = URL(string: item.url) else {
+            item.status = .failed
+            item.errorMessage = "Invalid URL"
+            return
+        }
+        beginDownload(item: item, url: url)
+    }
+
+    func resumeDownload(item: DownloadItem, force: Bool = false) {
+        if !force && activeDownloads.count >= maxConcurrentDownloads {
             item.status = .waiting
             pendingQueue.insert(item, at: 0)
             return
@@ -170,6 +299,7 @@ class DownloadManager: NSObject, ObservableObject {
         pendingQueue.removeAll { $0.id == item.id }
         item.status = .cancelled
         item.resumeData = nil
+        removeTempPlaceholder(for: item.id)
         if activeDownloads.isEmpty {
             NSApp.dockTile.badgeLabel = nil
         }
@@ -214,11 +344,17 @@ class DownloadManager: NSObject, ObservableObject {
 
     // MARK: - Private
 
+    /// Tracks the .fetchoradownload placeholder path for each active download
+    private var tempPlaceholders: [UUID: URL] = [:]
+
     private func beginDownload(item: DownloadItem, url: URL) {
         item.status = .downloading
 
         let itemId = item.id
         let tracker = SpeedTracker()
+
+        // Create .fetchoradownload placeholder in the download directory
+        createTempPlaceholder(for: item)
 
         // Try segmented download first
         SegmentedDownloadManager.shared.startSegmentedDownload(
@@ -227,22 +363,24 @@ class DownloadManager: NSObject, ObservableObject {
             fileName: item.fileName,
             onProgress: { [weak self] downloaded, total in
                 guard let self = self else { return }
+                // Always update bytes and speed tracker (decoupled from UI throttle)
+                guard var info = self.activeDownloads[itemId] else { return }
+                info.downloadedBytes = downloaded
+                info.totalBytes = total
+                info.speedTracker.addSample(totalBytes: downloaded)
+                self.activeDownloads[itemId] = info
+
+                // Throttle UI updates to ~2.5x per second
                 let now = CFAbsoluteTimeGetCurrent()
                 let lastUpdate = self.lastUIUpdateTime[itemId] ?? 0
                 guard now - lastUpdate >= 0.4 else { return }
                 self.lastUIUpdateTime[itemId] = now
 
-                if var info = self.activeDownloads[itemId] {
-                    info.downloadedBytes = downloaded
-                    info.totalBytes = total
-                    info.speedTracker.addSample(totalBytes: downloaded)
-                    self.activeDownloads[itemId] = info
-                    self.speeds[itemId] = info.speedTracker.currentSpeed
-                    self.etas[itemId] = info.speedTracker.estimatedTimeRemaining(
-                        totalBytes: total, downloadedBytes: downloaded
-                    )
-                    self.updateTotalSpeed()
-                }
+                self.speeds[itemId] = info.speedTracker.currentSpeed
+                self.etas[itemId] = info.speedTracker.estimatedTimeRemaining(
+                    totalBytes: total, downloadedBytes: downloaded
+                )
+                self.updateTotalSpeed()
 
                 if let item = self.findItem?(itemId) {
                     item.downloadedBytes = downloaded
@@ -252,11 +390,15 @@ class DownloadManager: NSObject, ObservableObject {
             },
             onComplete: { [weak self] resultURL in
                 guard let self = self, let item = self.findItem?(itemId) else { return }
+                // Ignore if item was paused/cancelled while segments were finishing
+                guard item.status == .downloading else { return }
+
                 item.destinationPath = resultURL.path
                 item.status = .completed
                 item.dateCompleted = Date()
                 item.downloadedBytes = item.totalBytes
                 self.retryAttempts.removeValue(forKey: itemId)
+                self.removeTempPlaceholder(for: itemId)
 
                 if UserDefaults.standard.bool(forKey: Constants.Keys.notificationsEnabled) {
                     NotificationService.shared.showDownloadComplete(fileName: item.fileName, path: resultURL.path)
@@ -264,6 +406,10 @@ class DownloadManager: NSObject, ObservableObject {
                 NotificationService.shared.playCompletionSound()
                 NSApp.dockTile.badgeLabel = nil
                 self.performCompletionAction(for: item)
+
+                NotificationCenter.default.post(name: Constants.Notifications.downloadCompleted,
+                                                object: nil,
+                                                userInfo: ["itemId": itemId])
 
                 self.activeDownloads.removeValue(forKey: itemId)
                 self.speeds.removeValue(forKey: itemId)
@@ -275,15 +421,24 @@ class DownloadManager: NSObject, ObservableObject {
             onError: { [weak self] error in
                 guard let self = self else { return }
 
+                // Ignore errors for paused/cancelled items (suspended tasks may fire errors)
+                if let currentItem = self.findItem?(itemId),
+                   currentItem.status == .paused || currentItem.status == .cancelled {
+                    return
+                }
+
                 // Fallback: server doesn't support Range → use normal download
                 if (error as NSError).localizedDescription == "USE_NORMAL_DOWNLOAD" {
-                    self.beginNormalDownload(item: self.findItem?(itemId) ?? item, url: url, tracker: tracker)
+                    if let currentItem = self.findItem?(itemId), currentItem.status == .downloading {
+                        self.beginNormalDownload(item: currentItem, url: url, tracker: tracker)
+                    }
                     return
                 }
 
                 if let item = self.findItem?(itemId) {
                     item.status = .failed
                     item.errorMessage = error.localizedDescription
+                    self.removeTempPlaceholder(for: itemId)
                     self.handleAutoRetry(item: item)
                 }
                 self.activeDownloads.removeValue(forKey: itemId)
@@ -312,6 +467,9 @@ class DownloadManager: NSObject, ObservableObject {
     }
 
     private func processQueue() {
+        // Sort pending queue by priority (high first)
+        pendingQueue.sort { ($0.safePriority.sortOrder) < ($1.safePriority.sortOrder) }
+
         while activeDownloads.count < maxConcurrentDownloads, let next = pendingQueue.first {
             pendingQueue.removeFirst()
             if let url = URL(string: next.url) {
@@ -432,6 +590,7 @@ extension DownloadManager: URLSessionDownloadDelegate {
                     item.dateCompleted = Date()
                     item.downloadedBytes = item.totalBytes
                     self.retryAttempts.removeValue(forKey: itemId)
+                    self.removeTempPlaceholder(for: itemId)
 
                     // Notification + Sound
                     if UserDefaults.standard.bool(forKey: Constants.Keys.notificationsEnabled) {
@@ -444,15 +603,21 @@ extension DownloadManager: URLSessionDownloadDelegate {
 
                     // Post-download action
                     self.performCompletionAction(for: item)
+
+                    NotificationCenter.default.post(name: Constants.Notifications.downloadCompleted,
+                                                    object: nil,
+                                                    userInfo: ["itemId": itemId])
                 } catch {
                     item.status = .failed
                     item.errorMessage = error.localizedDescription
                     try? fileManager.removeItem(at: safePath)
+                    self.removeTempPlaceholder(for: itemId)
                 }
 
             case .failure(let error):
                 item.status = .failed
                 item.errorMessage = error.localizedDescription
+                self.removeTempPlaceholder(for: itemId)
             }
 
             self.activeDownloads.removeValue(forKey: itemId)
@@ -529,6 +694,15 @@ extension DownloadManager: URLSessionDownloadDelegate {
 
     @MainActor
     private func performCompletionAction(for item: DownloadItem) {
+        // Auto-extract archives
+        if UserDefaults.standard.bool(forKey: Constants.Keys.autoExtractArchives) {
+            let archiveExtensions: Set<String> = ["zip", "tar", "gz", "bz2", "xz", "cpio"]
+            let ext = URL(fileURLWithPath: item.destinationPath).pathExtension.lowercased()
+            if archiveExtensions.contains(ext) {
+                extractArchive(at: item.destinationPath)
+            }
+        }
+
         let action = UserDefaults.standard.string(forKey: Constants.Keys.completionAction) ?? "none"
         let fileURL = URL(fileURLWithPath: item.destinationPath)
         switch action {
@@ -538,6 +712,44 @@ extension DownloadManager: URLSessionDownloadDelegate {
             NSWorkspace.shared.activateFileViewerSelecting([fileURL])
         default:
             break
+        }
+    }
+
+    /// Extract an archive using macOS built-in `ditto` (supports zip, cpio, etc.)
+    private func extractArchive(at path: String) {
+        let fileURL = URL(fileURLWithPath: path)
+        let extractDir = fileURL.deletingPathExtension()
+
+        try? FileManager.default.createDirectory(at: extractDir, withIntermediateDirectories: true)
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+        process.arguments = ["-xk", path, extractDir.path]
+
+        do {
+            try process.run()
+        } catch {
+            // ditto failed — silently ignore
+        }
+    }
+
+    // MARK: - Temp Placeholder (.fetchoradownload)
+
+    /// Creates a visible placeholder file (e.g. "movie.mp4.fetchoradownload") in the download directory
+    /// so the user can see the download is in progress, similar to FDM's .fdmdownload files.
+    private func createTempPlaceholder(for item: DownloadItem) {
+        let destination = FileOrganizer.shared.destinationURL(for: item.fileName)
+        let placeholder = destination.appendingPathExtension("fetchoradownload")
+        let parentDir = placeholder.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: parentDir, withIntermediateDirectories: true)
+        FileManager.default.createFile(atPath: placeholder.path, contents: nil)
+        tempPlaceholders[item.id] = placeholder
+    }
+
+    /// Removes the .fetchoradownload placeholder when download completes or is cancelled.
+    private func removeTempPlaceholder(for itemId: UUID) {
+        if let placeholder = tempPlaceholders.removeValue(forKey: itemId) {
+            try? FileManager.default.removeItem(at: placeholder)
         }
     }
 }

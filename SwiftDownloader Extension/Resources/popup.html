@@ -42,12 +42,18 @@
 
       <div class="divider"></div>
 
-      <div class="info">
-        <p>
-          Downloads from Safari are automatically intercepted and managed by
-          Fetchora.
-        </p>
+      <div class="toggle-section">
+        <div class="toggle-row">
+          <span class="toggle-label">Intercept Downloads</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="interceptToggle" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <p class="toggle-desc" id="toggleDesc">Downloads are intercepted by Fetchora</p>
       </div>
+
+      <div class="divider"></div>
 
       <div class="actions">
         <button id="openApp" class="btn btn-primary">
@@ -56,7 +62,7 @@
       </div>
 
       <div class="footer">
-        <span>v1.0 • Intercepting downloads</span>
+        <span id="footerText">v1.0 • Intercepting downloads</span>
       </div>
     </div>
     <script src="popup.js"></script>

@@ -53,45 +53,50 @@ try {
 try {
     browser.downloads.onCreated.addListener((downloadItem) => {
         if (downloadItem && downloadItem.url) {
-            const url = downloadItem.url;
-            // Skip blob/data URLs
-            if (url.startsWith('blob:') || url.startsWith('data:')) return;
+            // Check if interception is enabled
+            browser.storage.local.get('interceptEnabled', (result) => {
+                if (result.interceptEnabled === false) return;
 
-            const fileName = downloadItem.filename
-                ? downloadItem.filename.split('/').pop()
-                : 'download';
+                const url = downloadItem.url;
+                // Skip blob/data URLs
+                if (url.startsWith('blob:') || url.startsWith('data:')) return;
 
-            // Cancel Safari's own download
-            try {
-                browser.downloads.cancel(downloadItem.id);
-                browser.downloads.erase({ id: downloadItem.id });
-            } catch (e) {
-                console.log('[Fetchora] Could not cancel native download:', e);
-            }
+                const fileName = downloadItem.filename
+                    ? downloadItem.filename.split('/').pop()
+                    : 'download';
 
-            // Send to Fetchora
-            browser.runtime.sendNativeMessage(
-                'application.id',
-                {
-                    action: 'newDownload',
-                    url: url,
-                    fileName: fileName,
-                    pageUrl: downloadItem.referrer || '',
-                    pageTitle: ''
-                },
-                (response) => {
-                    console.log('[Fetchora] Download intercept response:', response);
+                // Cancel Safari's own download
+                try {
+                    browser.downloads.cancel(downloadItem.id);
+                    browser.downloads.erase({ id: downloadItem.id });
+                } catch (e) {
+                    console.log('[Fetchora] Could not cancel native download:', e);
                 }
-            );
 
-            // Show notification in the active tab
-            browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                if (tabs && tabs[0] && tabs[0].id) {
-                    browser.tabs.sendMessage(tabs[0].id, {
-                        action: 'showNotification',
-                        fileName: fileName
-                    });
-                }
+                // Send to Fetchora
+                browser.runtime.sendNativeMessage(
+                    'application.id',
+                    {
+                        action: 'newDownload',
+                        url: url,
+                        fileName: fileName,
+                        pageUrl: downloadItem.referrer || '',
+                        pageTitle: ''
+                    },
+                    (response) => {
+                        console.log('[Fetchora] Download intercept response:', response);
+                    }
+                );
+
+                // Show notification in the active tab
+                browser.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                    if (tabs && tabs[0] && tabs[0].id) {
+                        browser.tabs.sendMessage(tabs[0].id, {
+                            action: 'showNotification',
+                            fileName: fileName
+                        });
+                    }
+                });
             });
         }
     });
@@ -123,6 +128,17 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             { action: 'ping' },
             (response) => {
                 sendResponse(response || { status: 'error' });
+            }
+        );
+        return true;
+    }
+
+    if (message.action === 'openApp') {
+        browser.runtime.sendNativeMessage(
+            'application.id',
+            { action: 'openApp' },
+            (response) => {
+                sendResponse(response || { status: 'ok' });
             }
         );
         return true;

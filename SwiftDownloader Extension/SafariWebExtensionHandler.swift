@@ -14,6 +14,8 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         switch action {
         case "newDownload":
             handleNewDownload(messageDict, context: context)
+        case "openApp":
+            handleOpenApp(context: context)
         case "getStatus":
             sendResponse(context: context, message: ["status": "ok", "isRunning": true])
         case "ping":
@@ -46,6 +48,23 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
             "status": "success",
             "message": "Download started: \(fileName)"
         ])
+    }
+
+    private func handleOpenApp(context: NSExtensionContext) {
+        // Post a distributed notification to wake up the main app
+        DistributedNotificationCenter.default().postNotificationName(
+            NSNotification.Name("com.adilemre.SwiftDownloader.openApp"),
+            object: nil,
+            userInfo: nil,
+            deliverImmediately: true
+        )
+
+        // Also open via URL scheme as a fallback if the app isn't running
+        if let url = URL(string: "fetchora://open") {
+            NSWorkspace.shared.open(url)
+        }
+
+        sendResponse(context: context, message: ["status": "ok"])
     }
 
     private func sendResponse(context: NSExtensionContext, message: [String: Any]) {

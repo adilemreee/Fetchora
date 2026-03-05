@@ -15,7 +15,7 @@ struct DownloadCategory: Identifiable, Hashable {
     ]
 
     static let fileCategories: [DownloadCategory] = FileCategory.allCases.map {
-        DownloadCategory(id: $0.rawValue, name: $0.rawValue, icon: $0.iconName, filter: .category($0))
+        DownloadCategory(id: $0.rawValue, name: $0.localizedName, icon: $0.iconName, filter: .category($0))
     }
 }
 

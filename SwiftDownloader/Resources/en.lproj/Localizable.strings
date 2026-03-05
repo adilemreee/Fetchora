@@ -42,6 +42,13 @@
 "action.clearAll" = "Clear All";
 "action.change" = "Change";
 "action.openSettings" = "Open Settings";
+"action.pauseAll" = "Pause All";
+"action.resumeAll" = "Resume All";
+"action.importFile" = "Import URLs from text file";
+"action.removeFromList" = "Remove from List";
+"action.deleteFile" = "Delete File";
+"action.renameFile" = "Rename File";
+"action.renameFilePlaceholder" = "File name";
 
 /* Add Download */
 "addDownload.title" = "Add Download";
@@ -57,35 +64,17 @@
 /* Duplicate */
 "duplicate.title" = "Duplicate Download";
 "duplicate.message" = "This URL has already been downloaded or is downloading. Download again?";
-
-/* Schedule */
-"schedule.title" = "Schedule Download";
-"schedule.startAt" = "Start at:";
-
-/* Sort */
-"sort.label" = "Sort:";
-"sort.dateAdded" = "Date Added";
-"sort.name" = "Name";
-"sort.size" = "Size";
-"sort.status" = "Status";
-"sort.priority" = "Priority";
-
-/* Priority */
-"priority.high" = "High";
-"priority.normal" = "Normal";
-"priority.low" = "Low";
-"priority.label" = "Priority";
-
-/* Detail */
-"detail.details" = "Details";
-"detail.url" = "URL";
-"detail.category" = "Category";
-"detail.added" = "Added";
-"detail.completed" = "Completed";
-"detail.location" = "Location";
-"detail.fileSize" = "File Size";
-"detail.error" = "Error";
-"detail.remaining" = "%@ remaining";
+"duplicate.download.title" = "Download Already Exists";
+"duplicate.path" = "Path:";
+"duplicate.size" = "Size:";
+"duplicate.dateAdded" = "Date Added:";
+"duplicate.skip" = "Skip";
+"duplicate.download" = "Download";
+"duplicate.file.title" = "File Already Exists";
+"duplicate.rememberChoice" = "Remember my choice for all downloads";
+"duplicate.rename" = "Rename";
+"duplicate.overwrite" = "Overwrite";
+"duplicate.cancel" = "Cancel";
 
 /* Settings */
 "settings.title" = "Settings";
@@ -94,12 +83,17 @@
 "settings.appearance" = "Appearance";
 "settings.network" = "Network";
 "settings.advanced" = "Advanced";
-
+"settings.about" = "About";
 "settings.downloadLocation" = "Download Location";
 "settings.performance" = "Performance";
 "settings.maxConcurrent" = "Max Concurrent Downloads";
 "settings.speedLimit" = "Speed Limit";
-"settings.speedUnlimited" = "Set to 0 for unlimited speed";
+"speedLimit.low" = "LOW";
+"speedLimit.medium" = "MEDIUM";
+"speedLimit.high" = "HIGH";
+"speedLimit.custom" = "CUSTOM";
+"speedLimit.unlimited" = "Unlimited";
+"speedLimit.downloadSpeed" = "Download speed";
 "settings.fileOrganization" = "File Organization";
 "settings.autoCategorize" = "Auto-categorize downloads";
 "settings.autoCategorizeDesc" = "Sort files into category folders";
@@ -111,12 +105,19 @@
 "settings.autoRetry" = "Auto Retry";
 "settings.autoRetryTitle" = "Auto-retry failed downloads";
 "settings.autoRetryDesc" = "Automatically retry when a download fails";
+"settings.maxRetryAttempts" = "Max retry attempts";
 "settings.maxRetry" = "Max retry attempts";
 "settings.afterComplete" = "After Download Completes";
 "settings.actionLabel" = "Action";
 "settings.doNothing" = "Do nothing";
 "settings.openFile" = "Open file";
 "settings.showInFinder" = "Show in Finder";
+"settings.autoExtract" = "Auto-extract archives";
+"settings.autoExtractDesc" = "Automatically extract ZIP, RAR, 7z files after download";
+"settings.autoRemoveCompleted" = "Auto-remove completed downloads";
+"settings.autoRemoveCompletedDesc" = "Remove downloads from the list after they complete";
+"settings.autoRemoveDeleted" = "Auto-remove deleted files";
+"settings.autoRemoveDeletedDesc" = "Remove downloads whose files no longer exist on disk";
 "settings.theme" = "Theme";
 "settings.system" = "System";
 "settings.dark" = "Dark";
@@ -140,6 +141,13 @@
 "settings.proxy" = "Proxy";
 "settings.useProxy" = "Use proxy";
 "settings.useProxyDesc" = "Route downloads through a proxy server";
+"settings.proxyType" = "Type";
+"settings.proxyAuth" = "Authentication (optional)";
+"settings.proxyUsername" = "Username";
+"settings.proxyPassword" = "Password";
+"settings.testConnection" = "Test Connection";
+"settings.connectedSuccessfully" = "Connected successfully";
+"settings.connectionFailed" = "Connection failed";
 "settings.safari" = "Safari Extension";
 "settings.extensionInstalled" = "Extension Installed";
 "settings.safariPath" = "Safari → Settings → Extensions → Fetchora";
@@ -147,31 +155,145 @@
 "settings.clearAll" = "Clear all downloads";
 "settings.clearAllDesc" = "Remove all download records";
 
-/* About */
-"about.title" = "About";
-"about.version" = "Version";
-"about.developer" = "Developer";
-"about.developerName" = "Adil Emre";
-"about.license" = "License";
-"about.licenseType" = "All Rights Reserved";
-"about.website" = "Website";
-"about.privacyPolicy" = "Privacy Policy";
-"about.support" = "Support";
-"about.madeWith" = "Made with ❤️ using SwiftUI";
+/* Statistics */
+"stats.title" = "Statistics";
+"stats.downloaded" = "Downloaded";
+"stats.completed" = "Completed";
+"stats.failed" = "Failed";
+"stats.byCategory" = "By Category";
+
+/* Bandwidth */
+"bandwidth.title" = "Bandwidth";
+
+/* Schedule */
+"schedule.title" = "Schedule Download";
+"schedule.startAt" = "Start at:";
+"schedule.noItems" = "No Scheduled Downloads";
+"schedule.noItemsDesc" = "Add downloads to run at a specific time";
 
 /* Empty States */
+"empty.noDownloads" = "No Downloads";
 "empty.noActive" = "No Active Downloads";
 "empty.noCompleted" = "No Completed Downloads";
 "empty.noScheduled" = "No Scheduled Downloads";
-"empty.noDownloads" = "No Downloads";
 "empty.subtitle" = "Downloads from Safari will appear here.\nEnable the extension in Safari preferences.";
+
+/* History */
+"history.title" = "Download History";
+"history.clear" = "Clear History";
+"history.noHistory" = "No History";
+"history.noHistoryDesc" = "Your download history will appear here";
+"history.searchPlaceholder" = "Search history...";
+
+/* Detail View */
+"detail.details" = "Details";
+"detail.url" = "URL";
+"detail.category" = "Category";
+"detail.added" = "Added";
+"detail.completed" = "Completed";
+"detail.location" = "Location";
+"detail.fileSize" = "File Size";
+"detail.error" = "Error";
+"detail.fileIntegrity" = "File Integrity";
+"detail.verify" = "Verify";
+"detail.remaining" = "%@ remaining";
+"detail.hashPlaceholder" = "Expected hash (optional)";
 
 /* Menu Bar */
 "menubar.activeCount" = "%d active";
 "menubar.noActive" = "No active downloads";
 "menubar.quit" = "Quit Fetchora";
 "menubar.show" = "Show Fetchora";
+"menuBar.noActive" = "No active downloads";
+"menuBar.openApp" = "Open Fetchora";
+
+/* URL Rules */
+"rules.title" = "URL Rules";
+"rules.description" = "Auto-download from matching domains";
+"rules.addRule" = "Add Rule";
+"rules.domainPlaceholder" = "Domain (e.g. example.com)";
+"rules.noRules" = "No URL rules configured";
+"rules.noRulesDesc" = "Add domains to auto-download matching URLs";
+
+/* Sort */
+"sort.label" = "Sort:";
+"sort.dateAdded" = "Date Added";
+"sort.name" = "Name";
+"sort.size" = "Size";
+"sort.status" = "Status";
+"sort.priority" = "Priority";
+
+/* Priority */
+"priority.high" = "High";
+"priority.normal" = "Normal";
+"priority.low" = "Low";
+"priority.label" = "Priority";
+
+/* About */
+"about.title" = "About";
+"about.version" = "Version";
+"about.developer" = "Developer";
+"about.developerName" = "Adil Emre Karayürek";
+"about.license" = "License";
+"about.licenseType" = "All Rights Reserved";
+"about.website" = "Website";
+"about.privacyPolicy" = "Privacy Policy";
+"about.support" = "Support";
+"about.madeWith" = "Made with ❤️ using SwiftUI";
+"about.platform" = "Platform";
+"about.framework" = "Framework";
+"about.links" = "Links";
+
+/* Categories */
+"category.videos" = "Videos";
+"category.music" = "Music";
+"category.documents" = "Documents";
+"category.images" = "Images";
+"category.archives" = "Archives";
+"category.applications" = "Applications";
+"category.code" = "Code";
+"category.other" = "Other";
+
+/* List */
+"list.itemCount" = "%d items";
+"list.searchPlaceholder" = "Search downloads...";
+
+/* Scheduler */
+"scheduler.title" = "Scheduler";
+"scheduler.subtitle" = "Schedule downloads for later";
+"scheduler.urlPlaceholder" = "Download URL";
+
+/* Drop */
+"drop.urlToDownload" = "Drop URL to download";
 
 /* Onboarding */
 "onboarding.welcome" = "Welcome to Fetchora";
+"onboarding.subtitle" = "The powerful Safari download manager for macOS";
+"onboarding.step1.title" = "Enable Safari Extension";
+"onboarding.step1.description" = "Safari → Settings → Extensions → Enable Fetchora";
+"onboarding.step2.title" = "Activate in Settings";
+"onboarding.step2.description" = "Safari → Settings → Extensions → Enable Fetchora";
+"onboarding.step3.title" = "Start Downloading";
+"onboarding.step3.description" = "Click any download link in Safari — Fetchora handles the rest";
 "onboarding.getStarted" = "Get Started";
+
+/* Repeat */
+"repeat.daily" = "Daily";
+"repeat.weekly" = "Weekly";
+"repeat.monthly" = "Monthly";
+"schedule.repeats" = "Repeats %@";
+
+/* Additional Settings */
+"settings.proxyHost" = "Host (e.g. 127.0.0.1)";
+"settings.proxyPort" = "Port";
+"settings.invalidHostPort" = "Invalid host or port";
+
+/* Delete Confirmation */
+"delete.confirmTitle" = "Delete Download";
+"delete.confirmMessage" = "Do you also want to delete the file from disk?";
+"delete.rememberChoice" = "Remember my choice";
+"settings.deleteConfirmation" = "Delete Behavior";
+"settings.deleteConfirmationDesc" = "Choose what happens when you remove a download";
+"settings.deleteAsk" = "Always ask";
+"settings.deleteRemoveOnly" = "Remove from list only";
+"settings.deleteAlsoFile" = "Also delete file";

@@ -1,11 +1,17 @@
 import Foundation
 import Combine
+import SwiftData
 
 class SchedulerService: ObservableObject {
     static let shared = SchedulerService()
 
     @Published var scheduledItems: [DownloadSchedule] = []
     private var timer: Timer?
+
+    /// Closure set by the app to fetch scheduled DownloadItems from SwiftData
+    var fetchScheduledItems: (() -> [DownloadItem])? = nil
+    /// Closure set by the app to start a download
+    var startDownloadHandler: ((DownloadItem) -> Void)? = nil
 
     private init() {
         startMonitoring()
@@ -33,7 +39,23 @@ class SchedulerService: ObservableObject {
 
     private func startMonitoring() {
         timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            self?.checkScheduledDownloads()
+            DispatchQueue.main.async {
+                self?.checkScheduledDownloads()
+                self?.checkPersistedScheduledItems()
+            }
+        }
+    }
+
+    /// Check SwiftData-persisted scheduled items whose scheduledDate has arrived
+    private func checkPersistedScheduledItems() {
+        guard let items = fetchScheduledItems?() else { return }
+        let now = Date()
+        for item in items where item.status == .scheduled {
+            if let scheduled = item.scheduledDate, scheduled <= now {
+                item.status = .waiting
+                item.scheduledDate = nil
+                startDownloadHandler?(item)
+            }
         }
     }
 

@@ -22,4 +22,12 @@ enum RepeatInterval: String, Codable, CaseIterable {
     case daily = "Daily"
     case weekly = "Weekly"
     case monthly = "Monthly"
+
+    var localizedName: String {
+        switch self {
+        case .daily: return NSLocalizedString("repeat.daily", comment: "")
+        case .weekly: return NSLocalizedString("repeat.weekly", comment: "")
+        case .monthly: return NSLocalizedString("repeat.monthly", comment: "")
+        }
+    }
 }

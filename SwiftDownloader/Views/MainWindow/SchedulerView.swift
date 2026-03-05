@@ -11,11 +11,11 @@ struct SchedulerView: View {
             // Header
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Scheduler")
+                    Text(NSLocalizedString("scheduler.title", comment: ""))
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(Theme.textPrimary)
 
-                    Text("Schedule downloads for later")
+                    Text(NSLocalizedString("scheduler.subtitle", comment: ""))
                         .font(.system(size: 12))
                         .foregroundColor(Theme.textTertiary)
                 }
@@ -25,7 +25,7 @@ struct SchedulerView: View {
                 Button(action: { showAddSheet = true }) {
                     HStack(spacing: 5) {
                         Image(systemName: "plus")
-                        Text("Schedule")
+                        Text(NSLocalizedString("action.schedule", comment: ""))
                     }
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(Theme.primary)
@@ -44,8 +44,8 @@ struct SchedulerView: View {
             if scheduler.scheduledItems.isEmpty {
                 EmptyStateView(
                     icon: "calendar.circle",
-                    title: "No Scheduled Downloads",
-                    subtitle: "Add downloads to run at a specific time"
+                    title: NSLocalizedString("schedule.noItems", comment: ""),
+                    subtitle: NSLocalizedString("schedule.noItemsDesc", comment: "")
                 )
             } else {
                 ScrollView {
@@ -78,7 +78,7 @@ struct SchedulerView: View {
                     .foregroundColor(Theme.textPrimary)
 
                 if schedule.isRecurring, let interval = schedule.repeatInterval {
-                    Text("Repeats \(interval.rawValue.lowercased())")
+                    Text(String(format: NSLocalizedString("schedule.repeats", comment: ""), interval.localizedName))
                         .font(.system(size: 11))
                         .foregroundColor(Theme.textTertiary)
                 }
@@ -109,21 +109,21 @@ struct SchedulerView: View {
 
     private var addScheduleSheet: some View {
         VStack(spacing: 20) {
-            Text("Schedule Download")
+            Text(NSLocalizedString("schedule.title", comment: ""))
                 .font(.system(size: 16, weight: .bold))
 
-            TextField("Download URL", text: $newURL)
+            TextField(NSLocalizedString("scheduler.urlPlaceholder", comment: ""), text: $newURL)
                 .textFieldStyle(.roundedBorder)
 
-            DatePicker("Start at", selection: $newDate, displayedComponents: [.date, .hourAndMinute])
+            DatePicker(NSLocalizedString("schedule.startAt", comment: ""), selection: $newDate, displayedComponents: [.date, .hourAndMinute])
 
             HStack {
-                Button("Cancel") { showAddSheet = false }
+                Button(NSLocalizedString("action.cancel", comment: "")) { showAddSheet = false }
                     .buttonStyle(.plain)
 
                 Spacer()
 
-                Button("Schedule") {
+                Button(NSLocalizedString("action.schedule", comment: "")) {
                     addScheduledDownload()
                 }
                 .buttonStyle(.borderedProminent)

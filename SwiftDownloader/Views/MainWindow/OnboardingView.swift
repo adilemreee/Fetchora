@@ -13,20 +13,20 @@ struct OnboardingView: View {
                 .foregroundStyle(Theme.primaryGradient)
                 .padding(.bottom, 16)
 
-            Text("Welcome to Fetchora")
+            Text(NSLocalizedString("onboarding.welcome", comment: ""))
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(Theme.textPrimary)
 
-            Text("The powerful Safari download manager for macOS")
+            Text(NSLocalizedString("onboarding.subtitle", comment: ""))
                 .font(.system(size: 14))
                 .foregroundColor(Theme.textSecondary)
                 .padding(.bottom, 32)
 
             // Steps
             VStack(alignment: .leading, spacing: 20) {
-                step(number: 1, icon: "safari.fill", title: "Enable Safari Extension", description: "Safari → Settings → Extensions → Enable Fetchora")
-                step(number: 2, icon: "puzzlepiece.extension.fill", title: "Activate in Settings", description: "Safari → Settings → Extensions → Enable Fetchora")
-                step(number: 3, icon: "arrow.down.doc.fill", title: "Start Downloading", description: "Click any download link in Safari — Fetchora handles the rest")
+                step(number: 1, icon: "safari.fill", title: NSLocalizedString("onboarding.step1.title", comment: ""), description: NSLocalizedString("onboarding.step1.description", comment: ""))
+                step(number: 2, icon: "puzzlepiece.extension.fill", title: NSLocalizedString("onboarding.step2.title", comment: ""), description: NSLocalizedString("onboarding.step2.description", comment: ""))
+                step(number: 3, icon: "arrow.down.doc.fill", title: NSLocalizedString("onboarding.step3.title", comment: ""), description: NSLocalizedString("onboarding.step3.description", comment: ""))
             }
             .padding(32)
             .background(Theme.surfaceSecondary)
@@ -36,7 +36,7 @@ struct OnboardingView: View {
             Spacer()
 
             Button(action: { hasCompleted = true }) {
-                Text("Get Started")
+                Text(NSLocalizedString("onboarding.getStarted", comment: ""))
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
                     .frame(width: 200, height: 44)

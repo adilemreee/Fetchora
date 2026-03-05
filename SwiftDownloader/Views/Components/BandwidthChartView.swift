@@ -9,7 +9,7 @@ struct BandwidthChartView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Bandwidth")
+                Text(NSLocalizedString("bandwidth.title", comment: ""))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Theme.textSecondary)
 

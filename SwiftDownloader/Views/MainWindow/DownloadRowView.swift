@@ -45,7 +45,7 @@ struct DownloadRowView: View {
                     Spacer()
 
                     if item.safePriority != .normal {
-                        Text(item.safePriority.rawValue)
+                        Text(item.safePriority.localizedName)
                             .font(.system(size: 9, weight: .bold))
                             .foregroundColor(item.safePriority == .high ? Theme.error : Theme.accent)
                             .padding(.horizontal, 5)
@@ -57,7 +57,7 @@ struct DownloadRowView: View {
                     StatusBadge(status: item.status)
 
                     if item.status == .completed && !item.fileExists {
-                        Text("File Deleted")
+                        Text(NSLocalizedString("status.fileDeleted", comment: ""))
                             .font(.system(size: 9, weight: .bold))
                             .foregroundColor(Theme.error)
                             .padding(.horizontal, 5)
@@ -167,12 +167,15 @@ struct DownloadRowView: View {
                 }
             case .paused:
                 actionButton(icon: "play.fill", color: Theme.accent) {
-                    downloadManager.resumeDownload(item: item)
+                    downloadManager.resumeDownload(item: item, force: true)
                 }
                 actionButton(icon: "xmark", color: Theme.error) {
                     downloadManager.cancelDownload(item: item)
                 }
             case .waiting:
+                actionButton(icon: "play.fill", color: Theme.accent) {
+                    downloadManager.forceStartDownload(item: item)
+                }
                 actionButton(icon: "xmark", color: Theme.error) {
                     downloadManager.cancelDownload(item: item)
                 }

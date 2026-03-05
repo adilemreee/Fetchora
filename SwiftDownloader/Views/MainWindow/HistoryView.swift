@@ -29,14 +29,14 @@ struct HistoryView: View {
 
     private var headerSection: some View {
         HStack {
-            Text("Download History")
+            Text(NSLocalizedString("history.title", comment: ""))
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(Theme.textPrimary)
 
             Spacer()
 
             if !historyItems.isEmpty {
-                Button("Clear History") {
+                Button(NSLocalizedString("history.clear", comment: "")) {
                     clearHistory()
                 }
                 .font(.system(size: 12))
@@ -52,7 +52,7 @@ struct HistoryView: View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(Theme.textTertiary)
-            TextField("Search history...", text: $searchText)
+            TextField(NSLocalizedString("history.searchPlaceholder", comment: ""), text: $searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .foregroundColor(Theme.textPrimary)
@@ -70,8 +70,8 @@ struct HistoryView: View {
         if filteredItems.isEmpty {
             EmptyStateView(
                 icon: "clock.arrow.circlepath",
-                title: "No History",
-                subtitle: "Your download history will appear here"
+                title: NSLocalizedString("history.noHistory", comment: ""),
+                subtitle: NSLocalizedString("history.noHistoryDesc", comment: "")
             )
         } else {
             ScrollView {

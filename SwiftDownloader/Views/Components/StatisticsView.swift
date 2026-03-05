@@ -26,28 +26,28 @@ struct StatisticsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Statistics")
+            Text(NSLocalizedString("stats.title", comment: ""))
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(Theme.textSecondary)
 
             // Stats grid
             HStack(spacing: 12) {
-                statCard(title: "Downloaded", value: totalDownloaded.formattedFileSize, icon: "arrow.down.circle", color: Theme.primary)
-                statCard(title: "Completed", value: "\(completedCount)", icon: "checkmark.circle", color: Theme.accent)
-                statCard(title: "Failed", value: "\(failedCount)", icon: "xmark.circle", color: Theme.error)
+                statCard(title: NSLocalizedString("stats.downloaded", comment: ""), value: totalDownloaded.formattedFileSize, icon: "arrow.down.circle", color: Theme.primary)
+                statCard(title: NSLocalizedString("stats.completed", comment: ""), value: "\(completedCount)", icon: "checkmark.circle", color: Theme.accent)
+                statCard(title: NSLocalizedString("stats.failed", comment: ""), value: "\(failedCount)", icon: "xmark.circle", color: Theme.error)
             }
 
             // Category breakdown
             if !categoryStats.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("By Category")
+                    Text(NSLocalizedString("stats.byCategory", comment: ""))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(Theme.textTertiary)
 
                     ForEach(categoryStats.prefix(5), id: \.0) { category, count in
                         HStack(spacing: 8) {
                             CategoryIcon(category: category, size: 20)
-                            Text(category.rawValue)
+                            Text(category.localizedName)
                                 .font(.system(size: 11))
                                 .foregroundColor(Theme.textSecondary)
                             Spacer()
