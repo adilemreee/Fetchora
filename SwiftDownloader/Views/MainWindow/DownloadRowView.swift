@@ -135,10 +135,9 @@ struct DownloadRowView: View {
                 }
             }
 
-            // Action buttons
             if isHovered {
                 actionButtons
-                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
             }
         }
         .padding(.horizontal, 16)

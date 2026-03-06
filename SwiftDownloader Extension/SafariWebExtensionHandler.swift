@@ -16,13 +16,26 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
             handleNewDownload(messageDict, context: context)
         case "openApp":
             handleOpenApp(context: context)
+        case "getInterceptionConfig":
+            handleGetInterceptionConfig(context: context)
         case "getStatus":
-            sendResponse(context: context, message: ["status": "ok", "isRunning": true])
+            sendResponse(context: context, message: ["status": "ok", "isRunning": isMainAppRunning])
         case "ping":
             sendResponse(context: context, message: ["status": "ok", "version": "1.0"])
         default:
             sendResponse(context: context, message: ["error": "Unknown action: \(action)"])
         }
+    }
+
+    private let appGroupIdentifier = "group.com.adilemre.SwiftDownloader"
+    private let mainAppBundleIdentifier = "com.adilemre.SwiftDownloader"
+
+    private var isMainAppRunning: Bool {
+        !NSRunningApplication.runningApplications(withBundleIdentifier: mainAppBundleIdentifier).isEmpty
+    }
+
+    private var sharedDefaults: UserDefaults? {
+        UserDefaults(suiteName: appGroupIdentifier)
     }
 
     private func handleNewDownload(_ message: [String: Any], context: NSExtensionContext) {
@@ -33,16 +46,27 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 
         let fileName = message["fileName"] as? String ?? URL(string: url)?.lastPathComponent ?? "download"
 
-        // App Sandbox strips userInfo from DistributedNotifications.
-        // Encode URL in the `object` parameter (which IS delivered).
-        let payload = "\(url)|||SPLIT|||\(fileName)"
+        if isMainAppRunning {
+            // App Sandbox strips userInfo from DistributedNotifications.
+            // Encode URL in the `object` parameter (which IS delivered).
+            let payload = "\(url)|||SPLIT|||\(fileName)"
 
-        DistributedNotificationCenter.default().postNotificationName(
-            NSNotification.Name("com.adilemre.SwiftDownloader.newDownload"),
-            object: payload,
-            userInfo: nil,
-            deliverImmediately: true
-        )
+            DistributedNotificationCenter.default().postNotificationName(
+                NSNotification.Name("com.adilemre.SwiftDownloader.newDownload"),
+                object: payload,
+                userInfo: nil,
+                deliverImmediately: true
+            )
+        } else if var components = URLComponents(string: "fetchora://download") {
+            components.queryItems = [
+                URLQueryItem(name: "url", value: url),
+                URLQueryItem(name: "fileName", value: fileName)
+            ]
+
+            if let launchURL = components.url {
+                NSWorkspace.shared.open(launchURL)
+            }
+        }
 
         sendResponse(context: context, message: [
             "status": "success",
@@ -65,6 +89,14 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         }
 
         sendResponse(context: context, message: ["status": "ok"])
+    }
+
+    private func handleGetInterceptionConfig(context: NSExtensionContext) {
+        let urlRules = sharedDefaults?.stringArray(forKey: "urlRules") ?? []
+        sendResponse(context: context, message: [
+            "status": "ok",
+            "urlRules": urlRules
+        ])
     }
 
     private func sendResponse(context: NSExtensionContext, message: [String: Any]) {

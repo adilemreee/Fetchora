@@ -11,10 +11,12 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
     private var segmentSessions: [UUID: URLSession] = [:]
     private var segmentDelegates: [UUID: SegmentDelegate] = [:]
     private var activeSegmentedDownloads: Set<UUID> = []
+    private var bandwidthConstrainedDownloads: Set<UUID> = []
 
     // Persist download info for pause/resume
     private var downloadURLs: [UUID: URL] = [:]
     private var downloadFileNames: [UUID: String] = [:]
+    private var downloadDestinations: [UUID: URL] = [:]
     private var downloadCallbacks: [UUID: SegmentCallbacks] = [:]
 
     let segmentCount = 4
@@ -48,6 +50,7 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
         itemId: UUID,
         url: URL,
         fileName: String,
+        destinationURL: URL,
         onProgress: @escaping @MainActor (Int64, Int64) -> Void,
         onComplete: @escaping @MainActor (URL) -> Void,
         onError: @escaping @MainActor (Error) -> Void
@@ -55,6 +58,7 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
         activeSegmentedDownloads.insert(itemId)
         downloadURLs[itemId] = url
         downloadFileNames[itemId] = fileName
+        downloadDestinations[itemId] = destinationURL
         downloadCallbacks[itemId] = SegmentCallbacks(onProgress: onProgress, onComplete: onComplete, onError: onError)
 
         Task {
@@ -71,6 +75,7 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
                     activeSegmentedDownloads.remove(itemId)
                     downloadURLs.removeValue(forKey: itemId)
                     downloadFileNames.removeValue(forKey: itemId)
+                    downloadDestinations.removeValue(forKey: itemId)
                     downloadCallbacks.removeValue(forKey: itemId)
                     onError(NSError(domain: "SegmentedDownload", code: -2,
                                     userInfo: [NSLocalizedDescriptionKey: "USE_NORMAL_DOWNLOAD"]))
@@ -85,6 +90,7 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
                     itemId: itemId,
                     url: url,
                     fileName: fileName,
+                    destinationURL: destinationURL,
                     totalSize: info.contentLength,
                     onProgress: onProgress,
                     onComplete: onComplete,
@@ -105,7 +111,10 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
         activeSegmentedDownloads.remove(itemId)
         downloadURLs.removeValue(forKey: itemId)
         downloadFileNames.removeValue(forKey: itemId)
+        downloadDestinations.removeValue(forKey: itemId)
         downloadCallbacks.removeValue(forKey: itemId)
+        bandwidthConstrainedDownloads.remove(itemId)
+        cleanupPersistedSegments(itemId: itemId)
     }
 
     func isSegmented(_ itemId: UUID) -> Bool {
@@ -130,6 +139,16 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
         segmentDelegates[itemId] != nil && !activeSegmentedDownloads.contains(itemId)
     }
 
+    func setBandwidthConstrained(_ isConstrained: Bool, for itemId: UUID) {
+        if isConstrained {
+            bandwidthConstrainedDownloads.insert(itemId)
+        } else {
+            bandwidthConstrainedDownloads.remove(itemId)
+        }
+
+        segmentDelegates[itemId]?.setPreferredConcurrentSegments(isConstrained ? 1 : segmentCount)
+    }
+
     /// Resume a previously paused segmented download by creating new tasks from where we left off.
     func resumeSegmented(itemId: UUID) -> Bool {
         guard let delegate = segmentDelegates[itemId],
@@ -146,6 +165,7 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
 
         let session = URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
         segmentSessions[itemId] = session
+        delegate.setPreferredConcurrentSegments(bandwidthConstrainedDownloads.contains(itemId) ? 1 : segmentCount)
 
         // Resume by creating new tasks with adjusted Range headers based on temp file sizes
         delegate.resumeWithNewTasks(session: session, url: url)
@@ -163,12 +183,21 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
         segmentDelegates[itemId]?.throttleResumeTasks()
     }
 
+    func cleanupPersistedSegments(itemId: UUID) {
+        let tempDir = FileManager.default.temporaryDirectory
+        for index in 0..<segmentCount {
+            let fileURL = tempDir.appendingPathComponent("seg_\(itemId)_\(index).tmp")
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+    }
+
     // MARK: - Private
 
     private func performSegmentedDownload(
         itemId: UUID,
         url: URL,
         fileName: String,
+        destinationURL: URL,
         totalSize: Int64,
         onProgress: @escaping @MainActor (Int64, Int64) -> Void,
         onComplete: @escaping @MainActor (URL) -> Void,
@@ -188,6 +217,7 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
             segmentCount: segmentCount,
             totalSize: totalSize,
             fileName: fileName,
+            destinationURL: destinationURL,
             originalRanges: ranges,
             onProgress: onProgress,
             onComplete: { [weak self] resultURL in
@@ -196,6 +226,7 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
                 self?.activeSegmentedDownloads.remove(itemId)
                 self?.downloadURLs.removeValue(forKey: itemId)
                 self?.downloadFileNames.removeValue(forKey: itemId)
+                self?.downloadDestinations.removeValue(forKey: itemId)
                 self?.downloadCallbacks.removeValue(forKey: itemId)
                 onComplete(resultURL)
             },
@@ -206,6 +237,7 @@ class SegmentedDownloadManager: NSObject, ObservableObject {
                 onError(error)
             }
         )
+        delegate.setPreferredConcurrentSegments(bandwidthConstrainedDownloads.contains(itemId) ? 1 : segmentCount)
 
         let config = ProxySettings.configuredSessionConfiguration()
         config.httpMaximumConnectionsPerHost = segmentCount
@@ -231,6 +263,7 @@ private class SegmentDelegate: NSObject, URLSessionDataDelegate {
     let segmentCount: Int
     let totalSize: Int64
     let fileName: String
+    let destinationURL: URL
     let originalRanges: [(start: Int64, end: Int64)]
 
     private var taskToSegment: [Int: Int] = [:]               // taskIdentifier -> segment index
@@ -242,12 +275,14 @@ private class SegmentDelegate: NSObject, URLSessionDataDelegate {
     private var lastProgressReport: CFAbsoluteTime = 0
     private(set) var isCancelled = false
     private(set) var isThrottled = false
+    private var preferredConcurrentSegments: Int
 
     let onProgress: @MainActor (Int64, Int64) -> Void
     let onComplete: @MainActor (URL) -> Void
     let onError: @MainActor (Error) -> Void
 
     init(itemId: UUID, segmentCount: Int, totalSize: Int64, fileName: String,
+         destinationURL: URL,
          originalRanges: [(start: Int64, end: Int64)],
          onProgress: @escaping @MainActor (Int64, Int64) -> Void,
          onComplete: @escaping @MainActor (URL) -> Void,
@@ -256,10 +291,17 @@ private class SegmentDelegate: NSObject, URLSessionDataDelegate {
         self.segmentCount = segmentCount
         self.totalSize = totalSize
         self.fileName = fileName
+        self.destinationURL = destinationURL
         self.originalRanges = originalRanges
         self.onProgress = onProgress
         self.onComplete = onComplete
         self.onError = onError
+        self.preferredConcurrentSegments = max(1, segmentCount)
+    }
+
+    func setPreferredConcurrentSegments(_ count: Int) {
+        preferredConcurrentSegments = max(1, min(count, segmentCount))
+        applyConcurrencyMode()
     }
 
     /// Start downloads for all segments, creating temp files on disk.
@@ -308,6 +350,7 @@ private class SegmentDelegate: NSObject, URLSessionDataDelegate {
         }
 
         // Check if all segments were already complete (edge case: resume with all done)
+        applyConcurrencyMode()
         checkAllComplete()
     }
 
@@ -356,6 +399,7 @@ private class SegmentDelegate: NSObject, URLSessionDataDelegate {
             task.resume()
         }
 
+        applyConcurrencyMode()
         checkAllComplete()
     }
 
@@ -388,9 +432,7 @@ private class SegmentDelegate: NSObject, URLSessionDataDelegate {
     func throttleResumeTasks() {
         isThrottled = false
         guard !isCancelled else { return }
-        for (index, task) in segmentTasks where !segmentCompleted.contains(index) {
-            task.resume()
-        }
+        applyConcurrencyMode()
     }
 
     /// Remove all temp files from disk (used on cancel).
@@ -464,7 +506,36 @@ private class SegmentDelegate: NSObject, URLSessionDataDelegate {
             onProgress(totalDown, totalSize)
         }
 
+        applyConcurrencyMode()
         checkAllComplete()
+    }
+
+    private func applyConcurrencyMode() {
+        guard !isCancelled else { return }
+
+        if isThrottled {
+            for task in segmentTasks.values {
+                task.suspend()
+            }
+            return
+        }
+
+        let allowedSegments = SegmentedTaskConcurrencyPlanner.allowedSegmentIndices(
+            activeSegmentIndices: Array(segmentTasks.keys),
+            preferredConcurrentSegments: preferredConcurrentSegments
+        )
+
+        for (index, task) in segmentTasks {
+            guard !segmentCompleted.contains(index) else { continue }
+
+            if allowedSegments.contains(index) {
+                if task.state == .suspended {
+                    task.resume()
+                }
+            } else if task.state == .running {
+                task.suspend()
+            }
+        }
     }
 
     private func checkAllComplete() {
@@ -476,7 +547,7 @@ private class SegmentDelegate: NSObject, URLSessionDataDelegate {
 
     // Merge all segment files into the final destination
     private func mergeSegments() {
-        let destination = FileOrganizer.shared.destinationURL(for: fileName)
+        let destination = destinationURL
         let tempDestination = destination.appendingPathExtension("fetchoradownload")
         let parentDir = destination.deletingLastPathComponent()
         try? FileManager.default.createDirectory(at: parentDir, withIntermediateDirectories: true)
@@ -523,5 +594,15 @@ private class SegmentDelegate: NSObject, URLSessionDataDelegate {
             }
             Task { @MainActor in onError(error) }
         }
+    }
+}
+
+enum SegmentedTaskConcurrencyPlanner {
+    static func allowedSegmentIndices(
+        activeSegmentIndices: [Int],
+        preferredConcurrentSegments: Int
+    ) -> Set<Int> {
+        guard preferredConcurrentSegments > 0 else { return [] }
+        return Set(activeSegmentIndices.sorted().prefix(preferredConcurrentSegments))
     }
 }

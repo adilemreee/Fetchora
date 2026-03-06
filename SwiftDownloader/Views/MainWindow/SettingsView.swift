@@ -29,7 +29,7 @@ struct SettingsView: View {
     @AppStorage(Constants.Keys.autoRemoveDeletedFiles) private var autoRemoveDeletedFiles = false
     @AppStorage(Constants.Keys.autoRemoveCompleted) private var autoRemoveCompleted = false
     @AppStorage(Constants.Keys.deleteConfirmation) private var deleteConfirmation = "ask"
-    @State private var urlRules: [String] = UserDefaults.standard.stringArray(forKey: Constants.Keys.urlRules) ?? []
+    @State private var urlRules: [String] = SharedSettings.urlRules()
     @State private var newRuleDomain = ""
     @State private var downloadDirectory: String = FileOrganizer.shared.baseDownloadDirectory.path
     @Environment(\.dismiss) private var dismiss
@@ -141,6 +141,16 @@ struct SettingsView: View {
             }
         }
         .background(Theme.surfacePrimary)
+        .onChange(of: maxConcurrent) { _, _ in
+            DownloadManager.shared.refreshScheduling()
+        }
+        .onChange(of: speedLimitPreset) { _, _ in
+            DownloadManager.shared.speedLimitConfigurationDidChange()
+        }
+        .onChange(of: customSpeedKBps) { _, _ in
+            guard speedLimitPreset == "custom" else { return }
+            DownloadManager.shared.speedLimitConfigurationDidChange()
+        }
     }
 
     // MARK: - Header
@@ -463,16 +473,18 @@ struct SettingsView: View {
     }
 
     private func addURLRule() {
-        let domain = newRuleDomain.trimmingCharacters(in: .whitespaces).lowercased()
+        let domain = URLRuleMatcher.normalize(newRuleDomain)
         guard !domain.isEmpty, !urlRules.contains(domain) else { return }
         urlRules.append(domain)
         UserDefaults.standard.set(urlRules, forKey: Constants.Keys.urlRules)
+        SharedSettings.saveURLRules(urlRules)
         newRuleDomain = ""
     }
 
     private func removeURLRule(_ rule: String) {
         urlRules.removeAll { $0 == rule }
         UserDefaults.standard.set(urlRules, forKey: Constants.Keys.urlRules)
+        SharedSettings.saveURLRules(urlRules)
     }
 
     private var appBehaviorSection: some View {
@@ -787,8 +799,11 @@ struct SettingsView: View {
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = true
         if panel.runModal() == .OK, let url = panel.url {
-            downloadDirectory = url.path
-            UserDefaults.standard.set(url.path, forKey: Constants.Keys.downloadDirectory)
+            if FileOrganizer.shared.setBaseDownloadDirectory(url) {
+                downloadDirectory = FileOrganizer.shared.baseDownloadDirectory.path
+            } else {
+                downloadDirectory = url.path
+            }
         }
     }
 

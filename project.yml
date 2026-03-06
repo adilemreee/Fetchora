@@ -6,13 +6,16 @@ options:
   xcodeVersion: "15.0"
   groupSortPosition: top
 
+fileGroups:
+  - SwiftDownloader.xctestplan
+
 settings:
   base:
     SWIFT_VERSION: "5.9"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
     CODE_SIGN_IDENTITY: "Apple Development"
     CODE_SIGN_STYLE: Automatic
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "GHV7BT96W7"
 
 targets:
   SwiftDownloader:
@@ -30,8 +33,9 @@ targets:
         CURRENT_PROJECT_VERSION: 1
         COMBINE_HIDPI_IMAGES: true
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        CODE_SIGN_IDENTITY: "Sign to Run Locally"
+        CODE_SIGN_IDENTITY: "Apple Development"
         CODE_SIGN_STYLE: Automatic
+        INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.developer-tools"
     entitlements:
       path: SwiftDownloader/SwiftDownloader.entitlements
       properties:
@@ -39,6 +43,8 @@ targets:
         com.apple.security.files.user-selected.read-write: true
         com.apple.security.files.downloads.read-write: true
         com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - group.com.adilemre.SwiftDownloader
     dependencies:
       - target: "SwiftDownloader Extension"
 
@@ -57,6 +63,64 @@ targets:
         LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks"
         SWIFT_EMIT_LOC_STRINGS: true
         GENERATE_INFOPLIST_FILE: false
-        CODE_SIGN_IDENTITY: "Sign to Run Locally"
+        CODE_SIGN_IDENTITY: "Apple Development"
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ENTITLEMENTS: "SwiftDownloader Extension/SwiftDownloader_Extension.entitlements"
+    entitlements:
+      path: "SwiftDownloader Extension/SwiftDownloader_Extension.entitlements"
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.application-groups:
+          - group.com.adilemre.SwiftDownloader
+
+  SwiftDownloaderTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - SwiftDownloaderTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.adilemre.SwiftDownloaderTests
+        GENERATE_INFOPLIST_FILE: true
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Fetchora.app/Contents/MacOS/Fetchora"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+    dependencies:
+      - target: SwiftDownloader
+
+schemes:
+  SwiftDownloader:
+    build:
+      targets:
+        SwiftDownloader: all
+        SwiftDownloader Extension: [build]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      testPlans:
+        - path: SwiftDownloader.xctestplan
+          defaultPlan: true
+      targets:
+        - name: SwiftDownloaderTests
+    archive:
+      config: Release
+
+  SwiftDownloaderTests:
+    build:
+      targets:
+        SwiftDownloaderTests: all
+    test:
+      config: Debug
+      gatherCoverageData: true
+      testPlans:
+        - path: SwiftDownloader.xctestplan
+          defaultPlan: true
+      targets:
+        - name: SwiftDownloaderTests
+
+  SwiftDownloader Extension:
+    build:
+      targets:
+        SwiftDownloader Extension: all

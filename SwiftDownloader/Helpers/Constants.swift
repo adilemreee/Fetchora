@@ -35,6 +35,7 @@ enum Constants {
     // UserDefaults keys
     enum Keys {
         static let downloadDirectory = "downloadDirectory"
+        static let downloadDirectoryBookmark = "downloadDirectoryBookmark"
         static let maxConcurrentDownloads = "maxConcurrentDownloads"
         static let speedLimitPreset = "speedLimitPreset"
         static let speedLimitCustomKBps = "speedLimitCustomKBps"

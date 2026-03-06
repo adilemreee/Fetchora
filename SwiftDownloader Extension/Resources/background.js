@@ -1,5 +1,37 @@
 // Fetchora - Background Script (Manifest V2)
 
+const interceptionConfig = {
+    urlRules: [],
+};
+
+function normalizeDomain(rule) {
+    return String(rule || '')
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//, '')
+        .replace(/^www\./, '')
+        .replace(/\/+$/, '');
+}
+
+function refreshInterceptionConfig(callback) {
+    browser.runtime.sendNativeMessage(
+        'application.id',
+        { action: 'getInterceptionConfig' },
+        (response) => {
+            if (response && response.status === 'ok' && Array.isArray(response.urlRules)) {
+                interceptionConfig.urlRules = response.urlRules.map(normalizeDomain).filter(Boolean);
+            }
+
+            if (callback) {
+                callback(interceptionConfig);
+            }
+        }
+    );
+}
+
+refreshInterceptionConfig();
+setInterval(refreshInterceptionConfig, 30000);
+
 // ── Context Menu: "Download with Fetchora" on links ──
 try {
     browser.contextMenus.create({
@@ -130,6 +162,16 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 sendResponse(response || { status: 'error' });
             }
         );
+        return true;
+    }
+
+    if (message.action === 'getInterceptionConfig') {
+        refreshInterceptionConfig((config) => {
+            sendResponse({
+                status: 'ok',
+                urlRules: config.urlRules,
+            });
+        });
         return true;
     }
 

@@ -3,16 +3,19 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		0424BB5392CBDE2230B3283B /* HashVerifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE9A2511E0CACCF30CC3EF3B /* HashVerifier.swift */; };
+		04CB7EA18F866CA02C27494D /* ExternalDownloadRequestGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F708C3D39284D64C8113B58E /* ExternalDownloadRequestGate.swift */; };
 		085A61F2B1FBD8A407EF73BF /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434CB57B11AA4B1CF4ADFAAB /* HistoryView.swift */; };
+		0978898A0FEC916D5E813F56 /* DownloadTrafficLimiterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB15ADD840D26E6CCDC0A789 /* DownloadTrafficLimiterTests.swift */; };
 		10D4D724A08F82CE2C421628 /* icon-128.png in Resources */ = {isa = PBXBuildFile; fileRef = E890A0E96F18F1FCAA4A1726 /* icon-128.png */; };
 		12BDB17884507FA58D34866A /* BandwidthChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 903E607DC3E69BBF721718E4 /* BandwidthChartView.swift */; };
 		13C74CF32D47081B36ABEFCF /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C9056208264EB63C9C1073 /* Theme.swift */; };
 		13DD0443E9D3EB7B4CCD2ACD /* popup.css in Resources */ = {isa = PBXBuildFile; fileRef = 6969C4C8C6D06D6B85BE8E95 /* popup.css */; };
+		1AFF24E6B3D57AECEDEE4ACC /* StoreRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DF5E825A877454F47D714E /* StoreRecoveryView.swift */; };
 		24BC1C9AE0842023C6FD0207 /* icon-512.png in Resources */ = {isa = PBXBuildFile; fileRef = 560D6B8BA7D7FC0A489E0814 /* icon-512.png */; };
 		24FC543223D61878433B1F54 /* DownloadDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE9CD3261E7BA3F83A846C4 /* DownloadDetailView.swift */; };
 		26BE7B739CA6F23E2039BE62 /* SwiftDownloaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B17986BB193F271030477D /* SwiftDownloaderApp.swift */; };
@@ -20,7 +23,10 @@
 		2D62095FC9540695DF3DA4BC /* FileOrganizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D2298B37801673C240C2186 /* FileOrganizer.swift */; };
 		2F75BE1FF369349069E38D11 /* SchedulerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 652500E2F52170DB1CC27E90 /* SchedulerService.swift */; };
 		35ECBD80DAB491BC6395A858 /* DownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8455A65CA2C50441CF75C41 /* DownloadManager.swift */; };
+		390D2B2D688B8D86DC4B193A /* DownloadQueuePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C5E85486B28019FAAED8C3 /* DownloadQueuePlanner.swift */; };
 		4551880C6EEBEDB4ABE586BC /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 257444F3BDBA8ABCACC6D188 /* MenuBarView.swift */; };
+		45738E98912E6318A0DE9EE7 /* ScheduledDownloadPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5EE37FECF788355B6DE6C6C /* ScheduledDownloadPlanner.swift */; };
+		47533E02DC1201D810BD31A6 /* DuplicateHandlingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8B17C4E557B234018FBB6B4 /* DuplicateHandlingTests.swift */; };
 		520B49F9FE36F97B1EB51BFD /* SchedulerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5644758E22C57460823E5C8 /* SchedulerView.swift */; };
 		547937F6610C15639AF868C5 /* SpeedTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28E36557A0CA0BF127EF1F3 /* SpeedTracker.swift */; };
 		54F99A8A7F477DAE721C541A /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 629FD56836F0437CFA4C8D28 /* Localizable.strings */; };
@@ -30,32 +36,47 @@
 		65550F3121FD9165711396FA /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = 055DF7BCDFA9DC25FFCBECB6 /* popup.js */; };
 		6B3C8293378877B0E5B07A99 /* DownloadRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AC8F73A0C395133239C62B8 /* DownloadRowView.swift */; };
 		6BB0816B4C233B5CF34B2287 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E7404AB4DA5242FDA444B48 /* Extensions.swift */; };
+		7449E8AA8C016B29DCE13976 /* DownloadTrafficLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8B236279D59968AF460F51 /* DownloadTrafficLimiter.swift */; };
 		778F4EB043B1A846A581774C /* DownloadListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27024DF651DA28CE73AEB5AB /* DownloadListView.swift */; };
 		7891B89F7B0C948EEABCAE8C /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = EC7B97CCD5D3CB0ED62F4D52 /* manifest.json */; };
 		7D1DD77C99C8975C6F4984C6 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = B35991B8F87298E219DD8B17 /* popup.html */; };
 		7FE46476590CE8C42287C9B6 /* PreviewHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B5C14DB674015740C0D646 /* PreviewHelper.swift */; };
+		82EF470421002A467C63995D /* DownloadQueuePlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9C67392C9266DB202F2136A /* DownloadQueuePlannerTests.swift */; };
 		84EFD56FF69AD61F22B6317F /* icon-256.png in Resources */ = {isa = PBXBuildFile; fileRef = A92FF7311C5897377B3C79EE /* icon-256.png */; };
 		8B36A5C561263C0CB5413209 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7DD5AB7C979B47507B53DB6 /* SafariWebExtensionHandler.swift */; };
 		98B9431C5F67F1DFE25BC2C1 /* ProxySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D1887A07BDA481E20E1C5EF /* ProxySettings.swift */; };
 		A1FB36C493749BE708FC64B8 /* icon-48.png in Resources */ = {isa = PBXBuildFile; fileRef = FF828423226DBAB72CD2A86A /* icon-48.png */; };
 		A51C1C1EF772107FF7480F92 /* DownloadItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF71F4F454F52EBE50FEBC8 /* DownloadItem.swift */; };
-		AE7822AAF8F1DE941A55649A /* Fetchora Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B6E00D8E61AF7CEF4FE3DB9C /* Fetchora Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A6F4DD46B9206391B783846E /* DuplicateDownloadResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD09F411B1658D1B880E6AA /* DuplicateDownloadResolver.swift */; };
+		AE7822AAF8F1DE941A55649A /* SwiftDownloader Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B6E00D8E61AF7CEF4FE3DB9C /* SwiftDownloader Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AFE2662FF987E32AB1C24D4E /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 9863006EA79787005FE27E70 /* background.js */; };
+		B4306DF9BF17FECEC7BC482B /* SchedulerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740586B68473D6AC6ED4EF5A /* SchedulerServiceTests.swift */; };
 		B4A1836BD668F1DD4BAFD6A3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 459438AADC0832E9011EC5EA /* Assets.xcassets */; };
 		B4F63685F537175075C33D21 /* FilePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61F126194FB5819B4C6F7BF9 /* FilePreviewView.swift */; };
+		C0B4DF420FE44EE4EEBFE533 /* DownloadRecoveryPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E87ABBD776ACF858E8E112D /* DownloadRecoveryPlanner.swift */; };
 		CA99C0839F6C180287621A50 /* DownloadCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4796FDDCAB002A923D5C2AAA /* DownloadCategory.swift */; };
+		D237D7672A428111FAF31054 /* DownloadManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 966EE21EB820AF1D130669C4 /* DownloadManagerTests.swift */; };
 		D433A397A775A1C752EA0F0D /* icon-96.png in Resources */ = {isa = PBXBuildFile; fileRef = 44F5C3F3CD65DF5F9A16D890 /* icon-96.png */; };
 		D66DC62412A03A7791C23F2F /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 887A85DE229A16D28273ED50 /* NotificationService.swift */; };
 		D8546AF3D1DE482FEB636D35 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AC8DAAA724947449AEE0B556 /* PrivacyInfo.xcprivacy */; };
 		DF0F34B15D6BAA1645895ABD /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27544AF3659CB615F4C9CBF8 /* SettingsView.swift */; };
 		E069F7C8B70BA16E0E35031C /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6D2D54C1950CF332EA046E /* OnboardingView.swift */; };
 		E5FEE64C7865176EF72940E4 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 2B089FA37532B9200793A636 /* content.js */; };
+		E77456756C3AF5361AE4F0AE /* SharedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9E93B638F648CA2E82C708 /* SharedSettings.swift */; };
 		EC8F7C13CC6AAC4D25508E94 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F23775D64DDD08D0EEADCB /* ContentView.swift */; };
+		EDCC8E4604968E5C202FAFC1 /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A5621D56854B058A46BCB8 /* PersistenceController.swift */; };
 		EF830E2491AD4FAF41EEEA87 /* StatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 838AFA928E4C0EA72C1F071F /* StatisticsView.swift */; };
 		F38EA4295E6A395099102642 /* DownloadSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F63BE4B2AAA4901F9DB1C7 /* DownloadSchedule.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		1123158B621B9CFE7B71C312 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5EDF1B4CFF9EAA88D27AC285 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 27BEE93910EE0FCE6B6C0A86;
+			remoteInfo = SwiftDownloader;
+		};
 		7E9022270D8E6F9B781D1846 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 5EDF1B4CFF9EAA88D27AC285 /* Project object */;
@@ -72,7 +93,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				AE7822AAF8F1DE941A55649A /* Fetchora Extension.appex in Embed Foundation Extensions */,
+				AE7822AAF8F1DE941A55649A /* SwiftDownloader Extension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -86,17 +107,20 @@
 		1456A01C9A7ED8335B1DC2C2 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		17F63BE4B2AAA4901F9DB1C7 /* DownloadSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadSchedule.swift; sourceTree = "<group>"; };
 		1AC8F73A0C395133239C62B8 /* DownloadRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRowView.swift; sourceTree = "<group>"; };
-		23BA97D54793A19D01D8D880 /* Fetchora.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fetchora.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1E87ABBD776ACF858E8E112D /* DownloadRecoveryPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRecoveryPlanner.swift; sourceTree = "<group>"; };
+		23BA97D54793A19D01D8D880 /* SwiftDownloader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDownloader.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		257444F3BDBA8ABCACC6D188 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		27024DF651DA28CE73AEB5AB /* DownloadListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadListView.swift; sourceTree = "<group>"; };
 		27544AF3659CB615F4C9CBF8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		2B089FA37532B9200793A636 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = content.js; sourceTree = "<group>"; };
 		3278C2AEFD16B5ECE4776269 /* SegmentedDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentedDownloader.swift; sourceTree = "<group>"; };
+		32C5E85486B28019FAAED8C3 /* DownloadQueuePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadQueuePlanner.swift; sourceTree = "<group>"; };
 		434CB57B11AA4B1CF4ADFAAB /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		44F5C3F3CD65DF5F9A16D890 /* icon-96.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-96.png"; sourceTree = "<group>"; };
 		459438AADC0832E9011EC5EA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4796FDDCAB002A923D5C2AAA /* DownloadCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadCategory.swift; sourceTree = "<group>"; };
 		49EB1E068538AA83E666D8B8 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
+		5392B32113E6FC1415F01889 /* SwiftDownloader.xctestplan */ = {isa = PBXFileReference; path = SwiftDownloader.xctestplan; sourceTree = "<group>"; };
 		560D6B8BA7D7FC0A489E0814 /* icon-512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-512.png"; sourceTree = "<group>"; };
 		57B44C95D850B50E14F0E59A /* ClipboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMonitor.swift; sourceTree = "<group>"; };
 		5D2298B37801673C240C2186 /* FileOrganizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileOrganizer.swift; sourceTree = "<group>"; };
@@ -107,34 +131,59 @@
 		6969C4C8C6D06D6B85BE8E95 /* popup.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = popup.css; sourceTree = "<group>"; };
 		6D5C3B6A292DE776070BD78B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		72AC99244788D7A92E230284 /* SwiftDownloader_Extension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwiftDownloader_Extension.entitlements; sourceTree = "<group>"; };
+		740586B68473D6AC6ED4EF5A /* SchedulerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulerServiceTests.swift; sourceTree = "<group>"; };
 		7E7404AB4DA5242FDA444B48 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		80BE2333F5E5C19286130EA1 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		838AFA928E4C0EA72C1F071F /* StatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsView.swift; sourceTree = "<group>"; };
 		887A85DE229A16D28273ED50 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		8DF71F4F454F52EBE50FEBC8 /* DownloadItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadItem.swift; sourceTree = "<group>"; };
 		903E607DC3E69BBF721718E4 /* BandwidthChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandwidthChartView.swift; sourceTree = "<group>"; };
+		966EE21EB820AF1D130669C4 /* DownloadManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManagerTests.swift; sourceTree = "<group>"; };
 		9863006EA79787005FE27E70 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = background.js; sourceTree = "<group>"; };
+		99DF5E825A877454F47D714E /* StoreRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreRecoveryView.swift; sourceTree = "<group>"; };
+		9E9E93B638F648CA2E82C708 /* SharedSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSettings.swift; sourceTree = "<group>"; };
 		9EFA44B9DDF1F7187DEF6C78 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A1C9056208264EB63C9C1073 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		A28E36557A0CA0BF127EF1F3 /* SpeedTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedTracker.swift; sourceTree = "<group>"; };
 		A5644758E22C57460823E5C8 /* SchedulerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulerView.swift; sourceTree = "<group>"; };
 		A8455A65CA2C50441CF75C41 /* DownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift; sourceTree = "<group>"; };
 		A92FF7311C5897377B3C79EE /* icon-256.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-256.png"; sourceTree = "<group>"; };
-		AC8DAAA724947449AEE0B556 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AAD09F411B1658D1B880E6AA /* DuplicateDownloadResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateDownloadResolver.swift; sourceTree = "<group>"; };
+		AC8DAAA724947449AEE0B556 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AE9A2511E0CACCF30CC3EF3B /* HashVerifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HashVerifier.swift; sourceTree = "<group>"; };
 		B35991B8F87298E219DD8B17 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = popup.html; sourceTree = "<group>"; };
 		B4B5C14DB674015740C0D646 /* PreviewHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelper.swift; sourceTree = "<group>"; };
-		B6E00D8E61AF7CEF4FE3DB9C /* Fetchora Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Fetchora Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5EE37FECF788355B6DE6C6C /* ScheduledDownloadPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledDownloadPlanner.swift; sourceTree = "<group>"; };
+		B6E00D8E61AF7CEF4FE3DB9C /* SwiftDownloader Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "SwiftDownloader Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B88B2EE74A238A6D6113CA3C /* SwiftDownloaderTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftDownloaderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B993870B1ABE331BD78D8552 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		BB15ADD840D26E6CCDC0A789 /* DownloadTrafficLimiterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadTrafficLimiterTests.swift; sourceTree = "<group>"; };
 		CA6D2D54C1950CF332EA046E /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		CC8B236279D59968AF460F51 /* DownloadTrafficLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadTrafficLimiter.swift; sourceTree = "<group>"; };
+		D1A5621D56854B058A46BCB8 /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
+		D8B17C4E557B234018FBB6B4 /* DuplicateHandlingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateHandlingTests.swift; sourceTree = "<group>"; };
 		D9B17986BB193F271030477D /* SwiftDownloaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDownloaderApp.swift; sourceTree = "<group>"; };
+		D9C67392C9266DB202F2136A /* DownloadQueuePlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadQueuePlannerTests.swift; sourceTree = "<group>"; };
 		E7DD5AB7C979B47507B53DB6 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
 		E890A0E96F18F1FCAA4A1726 /* icon-128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-128.png"; sourceTree = "<group>"; };
 		EC7B97CCD5D3CB0ED62F4D52 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
+		F708C3D39284D64C8113B58E /* ExternalDownloadRequestGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalDownloadRequestGate.swift; sourceTree = "<group>"; };
 		FF828423226DBAB72CD2A86A /* icon-48.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-48.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		272FF64F18FC3C18275DB80F /* SwiftDownloaderTests */ = {
+			isa = PBXGroup;
+			children = (
+				966EE21EB820AF1D130669C4 /* DownloadManagerTests.swift */,
+				D9C67392C9266DB202F2136A /* DownloadQueuePlannerTests.swift */,
+				BB15ADD840D26E6CCDC0A789 /* DownloadTrafficLimiterTests.swift */,
+				D8B17C4E557B234018FBB6B4 /* DuplicateHandlingTests.swift */,
+				740586B68473D6AC6ED4EF5A /* SchedulerServiceTests.swift */,
+			);
+			path = SwiftDownloaderTests;
+			sourceTree = "<group>";
+		};
 		34141AA66449941FBA48BAF7 /* SwiftDownloader Extension */ = {
 			isa = PBXGroup;
 			children = (
@@ -157,8 +206,9 @@
 		5E66F1D968B48AA7DB6C25E5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B6E00D8E61AF7CEF4FE3DB9C /* Fetchora Extension.appex */,
-				23BA97D54793A19D01D8D880 /* Fetchora.app */,
+				B6E00D8E61AF7CEF4FE3DB9C /* SwiftDownloader Extension.appex */,
+				23BA97D54793A19D01D8D880 /* SwiftDownloader.app */,
+				B88B2EE74A238A6D6113CA3C /* SwiftDownloaderTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -174,6 +224,7 @@
 				CA6D2D54C1950CF332EA046E /* OnboardingView.swift */,
 				A5644758E22C57460823E5C8 /* SchedulerView.swift */,
 				27544AF3659CB615F4C9CBF8 /* SettingsView.swift */,
+				99DF5E825A877454F47D714E /* StoreRecoveryView.swift */,
 			);
 			path = MainWindow;
 			sourceTree = "<group>";
@@ -246,6 +297,8 @@
 			children = (
 				900D75A14B4EC29A0252E6D6 /* SwiftDownloader */,
 				34141AA66449941FBA48BAF7 /* SwiftDownloader Extension */,
+				272FF64F18FC3C18275DB80F /* SwiftDownloaderTests */,
+				5392B32113E6FC1415F01889 /* SwiftDownloader.xctestplan */,
 				5E66F1D968B48AA7DB6C25E5 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -277,12 +330,20 @@
 			children = (
 				57B44C95D850B50E14F0E59A /* ClipboardMonitor.swift */,
 				A8455A65CA2C50441CF75C41 /* DownloadManager.swift */,
+				32C5E85486B28019FAAED8C3 /* DownloadQueuePlanner.swift */,
+				1E87ABBD776ACF858E8E112D /* DownloadRecoveryPlanner.swift */,
+				CC8B236279D59968AF460F51 /* DownloadTrafficLimiter.swift */,
+				AAD09F411B1658D1B880E6AA /* DuplicateDownloadResolver.swift */,
+				F708C3D39284D64C8113B58E /* ExternalDownloadRequestGate.swift */,
 				5D2298B37801673C240C2186 /* FileOrganizer.swift */,
 				AE9A2511E0CACCF30CC3EF3B /* HashVerifier.swift */,
 				887A85DE229A16D28273ED50 /* NotificationService.swift */,
+				D1A5621D56854B058A46BCB8 /* PersistenceController.swift */,
 				0D1887A07BDA481E20E1C5EF /* ProxySettings.swift */,
+				B5EE37FECF788355B6DE6C6C /* ScheduledDownloadPlanner.swift */,
 				652500E2F52170DB1CC27E90 /* SchedulerService.swift */,
 				3278C2AEFD16B5ECE4776269 /* SegmentedDownloader.swift */,
+				9E9E93B638F648CA2E82C708 /* SharedSettings.swift */,
 				A28E36557A0CA0BF127EF1F3 /* SpeedTracker.swift */,
 			);
 			path = Services;
@@ -308,8 +369,26 @@
 			packageProductDependencies = (
 			);
 			productName = SwiftDownloader;
-			productReference = 23BA97D54793A19D01D8D880 /* Fetchora.app */;
+			productReference = 23BA97D54793A19D01D8D880 /* SwiftDownloader.app */;
 			productType = "com.apple.product-type.application";
+		};
+		4CBA9EFCD3159186363DC1CA /* SwiftDownloaderTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 858324BCFDC1A4BA228888C2 /* Build configuration list for PBXNativeTarget "SwiftDownloaderTests" */;
+			buildPhases = (
+				2A512C392A8CC73C2B13E6FF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0D3951514180B61D8ADB2F4A /* PBXTargetDependency */,
+			);
+			name = SwiftDownloaderTests;
+			packageProductDependencies = (
+			);
+			productName = SwiftDownloaderTests;
+			productReference = B88B2EE74A238A6D6113CA3C /* SwiftDownloaderTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		BE53322FB27218E8C77DDF57 /* SwiftDownloader Extension */ = {
 			isa = PBXNativeTarget;
@@ -326,7 +405,7 @@
 			packageProductDependencies = (
 			);
 			productName = "SwiftDownloader Extension";
-			productReference = B6E00D8E61AF7CEF4FE3DB9C /* Fetchora Extension.appex */;
+			productReference = B6E00D8E61AF7CEF4FE3DB9C /* SwiftDownloader Extension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -339,9 +418,15 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					27BEE93910EE0FCE6B6C0A86 = {
+						DevelopmentTeam = GHV7BT96W7;
+						ProvisioningStyle = Automatic;
+					};
+					4CBA9EFCD3159186363DC1CA = {
+						DevelopmentTeam = GHV7BT96W7;
 						ProvisioningStyle = Automatic;
 					};
 					BE53322FB27218E8C77DDF57 = {
+						DevelopmentTeam = GHV7BT96W7;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -357,11 +442,13 @@
 			);
 			mainGroup = 9AB7FBCBEB859FBFC7AAFB63;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				27BEE93910EE0FCE6B6C0A86 /* SwiftDownloader */,
 				BE53322FB27218E8C77DDF57 /* SwiftDownloader Extension */,
+				4CBA9EFCD3159186363DC1CA /* SwiftDownloaderTests */,
 			);
 		};
 /* End PBXProject section */
@@ -398,6 +485,18 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2A512C392A8CC73C2B13E6FF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D237D7672A428111FAF31054 /* DownloadManagerTests.swift in Sources */,
+				82EF470421002A467C63995D /* DownloadQueuePlannerTests.swift in Sources */,
+				0978898A0FEC916D5E813F56 /* DownloadTrafficLimiterTests.swift in Sources */,
+				47533E02DC1201D810BD31A6 /* DuplicateHandlingTests.swift in Sources */,
+				B4306DF9BF17FECEC7BC482B /* SchedulerServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		690E5B7A568FAA932CF43A8A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -411,9 +510,14 @@
 				A51C1C1EF772107FF7480F92 /* DownloadItem.swift in Sources */,
 				778F4EB043B1A846A581774C /* DownloadListView.swift in Sources */,
 				35ECBD80DAB491BC6395A858 /* DownloadManager.swift in Sources */,
+				390D2B2D688B8D86DC4B193A /* DownloadQueuePlanner.swift in Sources */,
+				C0B4DF420FE44EE4EEBFE533 /* DownloadRecoveryPlanner.swift in Sources */,
 				6B3C8293378877B0E5B07A99 /* DownloadRowView.swift in Sources */,
 				F38EA4295E6A395099102642 /* DownloadSchedule.swift in Sources */,
+				7449E8AA8C016B29DCE13976 /* DownloadTrafficLimiter.swift in Sources */,
+				A6F4DD46B9206391B783846E /* DuplicateDownloadResolver.swift in Sources */,
 				6BB0816B4C233B5CF34B2287 /* Extensions.swift in Sources */,
+				04CB7EA18F866CA02C27494D /* ExternalDownloadRequestGate.swift in Sources */,
 				2D62095FC9540695DF3DA4BC /* FileOrganizer.swift in Sources */,
 				B4F63685F537175075C33D21 /* FilePreviewView.swift in Sources */,
 				0424BB5392CBDE2230B3283B /* HashVerifier.swift in Sources */,
@@ -421,15 +525,19 @@
 				4551880C6EEBEDB4ABE586BC /* MenuBarView.swift in Sources */,
 				D66DC62412A03A7791C23F2F /* NotificationService.swift in Sources */,
 				E069F7C8B70BA16E0E35031C /* OnboardingView.swift in Sources */,
+				EDCC8E4604968E5C202FAFC1 /* PersistenceController.swift in Sources */,
 				7FE46476590CE8C42287C9B6 /* PreviewHelper.swift in Sources */,
 				5AF305049467BA6282331783 /* ProgressBar.swift in Sources */,
 				98B9431C5F67F1DFE25BC2C1 /* ProxySettings.swift in Sources */,
+				45738E98912E6318A0DE9EE7 /* ScheduledDownloadPlanner.swift in Sources */,
 				2F75BE1FF369349069E38D11 /* SchedulerService.swift in Sources */,
 				520B49F9FE36F97B1EB51BFD /* SchedulerView.swift in Sources */,
 				2D0099F8DCF1812E5B8B22E8 /* SegmentedDownloader.swift in Sources */,
 				DF0F34B15D6BAA1645895ABD /* SettingsView.swift in Sources */,
+				E77456756C3AF5361AE4F0AE /* SharedSettings.swift in Sources */,
 				547937F6610C15639AF868C5 /* SpeedTracker.swift in Sources */,
 				EF830E2491AD4FAF41EEEA87 /* StatisticsView.swift in Sources */,
+				1AFF24E6B3D57AECEDEE4ACC /* StoreRecoveryView.swift in Sources */,
 				26BE7B739CA6F23E2039BE62 /* SwiftDownloaderApp.swift in Sources */,
 				13C74CF32D47081B36ABEFCF /* Theme.swift in Sources */,
 			);
@@ -446,6 +554,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		0D3951514180B61D8ADB2F4A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 27BEE93910EE0FCE6B6C0A86 /* SwiftDownloader */;
+			targetProxy = 1123158B621B9CFE7B71C312 /* PBXContainerItemProxy */;
+		};
 		9AB1679B538601164709EC1F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = BE53322FB27218E8C77DDF57 /* SwiftDownloader Extension */;
@@ -471,14 +584,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = SwiftDownloader/SwiftDownloader.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = GHV7BT96W7;
 				INFOPLIST_FILE = SwiftDownloader/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Fetchora;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -527,7 +638,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = GHV7BT96W7;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -556,24 +667,51 @@
 			};
 			name = Debug;
 		};
+		5BA940C663E30FF88AAB73B5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.adilemre.SwiftDownloaderTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Fetchora.app/Contents/MacOS/Fetchora";
+			};
+			name = Release;
+		};
+		6D96E782291FD015D69F2A0A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.adilemre.SwiftDownloaderTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Fetchora.app/Contents/MacOS/Fetchora";
+			};
+			name = Debug;
+		};
 		969D49CC8028B24CDFB49634 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "SwiftDownloader Extension/SwiftDownloader_Extension.entitlements";
-				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = GHV7BT96W7;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "SwiftDownloader Extension/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Fetchora;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.adilemre.SwiftDownloader.Extension;
 				PRODUCT_NAME = "Fetchora Extension";
@@ -586,20 +724,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = "SwiftDownloader Extension/SwiftDownloader_Extension.entitlements";
-				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = GHV7BT96W7;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "SwiftDownloader Extension/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = Fetchora;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@executable_path/../../../../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.adilemre.SwiftDownloader.Extension;
 				PRODUCT_NAME = "Fetchora Extension";
@@ -645,7 +776,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = GHV7BT96W7;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -672,14 +803,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = SwiftDownloader/SwiftDownloader.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = GHV7BT96W7;
 				INFOPLIST_FILE = SwiftDownloader/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Fetchora;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -717,6 +846,15 @@
 			buildConfigurations = (
 				A5779A9AC4B210B991B593C6 /* Debug */,
 				969D49CC8028B24CDFB49634 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		858324BCFDC1A4BA228888C2 /* Build configuration list for PBXNativeTarget "SwiftDownloaderTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6D96E782291FD015D69F2A0A /* Debug */,
+				5BA940C663E30FF88AAB73B5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

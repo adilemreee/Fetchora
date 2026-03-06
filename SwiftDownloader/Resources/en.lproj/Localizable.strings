@@ -113,7 +113,7 @@
 "settings.openFile" = "Open file";
 "settings.showInFinder" = "Show in Finder";
 "settings.autoExtract" = "Auto-extract archives";
-"settings.autoExtractDesc" = "Automatically extract ZIP, RAR, 7z files after download";
+"settings.autoExtractDesc" = "Automatically extract ZIP and tar-based archives after download";
 "settings.autoRemoveCompleted" = "Auto-remove completed downloads";
 "settings.autoRemoveCompletedDesc" = "Remove downloads from the list after they complete";
 "settings.autoRemoveDeleted" = "Auto-remove deleted files";
@@ -127,7 +127,7 @@
 "settings.monitorClipboardDesc" = "Auto-detect downloadable URLs from clipboard";
 "settings.scheduledDownloads" = "Scheduled Downloads";
 "settings.enableScheduled" = "Enable scheduled downloads";
-"settings.enableScheduledDesc" = "Queue downloads to start at a specific time";
+"settings.enableScheduledDesc" = "Automatically queue new downloads to start at the chosen time";
 "settings.startAt" = "Start at";
 "settings.appBehavior" = "App Behavior";
 "settings.launchAtLogin" = "Launch at login";
@@ -297,3 +297,11 @@
 "settings.deleteAsk" = "Always ask";
 "settings.deleteRemoveOnly" = "Remove from list only";
 "settings.deleteAlsoFile" = "Also delete file";
+"storeRecovery.title" = "Local data needs recovery";
+"storeRecovery.subtitle" = "Fetchora could not open its local database safely.";
+"storeRecovery.errorLabel" = "Error";
+"storeRecovery.unknownError" = "Unknown store error";
+"storeRecovery.resetDescription" = "Try again after closing other instances. Reset Local Data moves the current store into a recovery folder and creates a clean one.";
+"storeRecovery.tryAgain" = "Try Again";
+"storeRecovery.resetStore" = "Reset Local Data";
+"storeRecovery.openFolder" = "Open Store Folder";

@@ -113,7 +113,7 @@
 "settings.openFile" = "Dosyayı aç";
 "settings.showInFinder" = "Finder'da göster";
 "settings.autoExtract" = "Arşivleri otomatik çıkar";
-"settings.autoExtractDesc" = "İndirme sonrası ZIP, RAR, 7z dosyalarını otomatik çıkar";
+"settings.autoExtractDesc" = "Indirme sonrasi ZIP ve tar tabanli arsivleri otomatik cikar";
 "settings.autoRemoveCompleted" = "Tamamlananları otomatik kaldır";
 "settings.autoRemoveCompletedDesc" = "Tamamlanan indirmeleri listeden otomatik kaldır";
 "settings.autoRemoveDeleted" = "Silinen dosyaları otomatik kaldır";
@@ -127,7 +127,7 @@
 "settings.monitorClipboardDesc" = "Panodan indirilebilir URL'leri otomatik algıla";
 "settings.scheduledDownloads" = "Zamanlanmış İndirmeler";
 "settings.enableScheduled" = "Zamanlanmış indirmeleri etkinleştir";
-"settings.enableScheduledDesc" = "İndirmeleri belirli bir zamanda başlatmak için kuyruğa al";
+"settings.enableScheduledDesc" = "Yeni indirmeleri secilen saatte baslatmak uzere otomatik kuyruğa al";
 "settings.startAt" = "Başlangıç saati";
 "settings.appBehavior" = "Uygulama Davranışı";
 "settings.launchAtLogin" = "Girişte başlat";
@@ -297,3 +297,11 @@
 "settings.deleteAsk" = "Her zaman sor";
 "settings.deleteRemoveOnly" = "Sadece listeden kaldır";
 "settings.deleteAlsoFile" = "Dosyayı da sil";
+"storeRecovery.title" = "Yerel veri kurtarma gerekiyor";
+"storeRecovery.subtitle" = "Fetchora yerel veritabanini guvenli sekilde acamadi.";
+"storeRecovery.errorLabel" = "Hata";
+"storeRecovery.unknownError" = "Bilinmeyen veri deposu hatasi";
+"storeRecovery.resetDescription" = "Diger uygulama kopyalarini kapatip tekrar deneyin. Yerel veriyi sifirla secenegi mevcut veriyi kurtarma klasorune tasir ve temiz bir veri deposu olusturur.";
+"storeRecovery.tryAgain" = "Tekrar Dene";
+"storeRecovery.resetStore" = "Yerel Veriyi Sifirla";
+"storeRecovery.openFolder" = "Depo Klasorunu Ac";

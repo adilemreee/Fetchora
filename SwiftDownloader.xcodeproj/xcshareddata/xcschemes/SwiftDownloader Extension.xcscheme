@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "2630"
+   LastUpgradeVersion = "1500"
    wasCreatedForAppExtension = "YES"
    version = "2.0">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES"
-      buildArchitectures = "Automatic">
+      buildImplicitDependencies = "YES">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -22,28 +21,24 @@
                ReferencedContainer = "container:SwiftDownloader.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "27BEE93910EE0FCE6B6C0A86"
-               BuildableName = "Fetchora.app"
-               BlueprintName = "SwiftDownloader"
-               ReferencedContainer = "container:SwiftDownloader.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      shouldAutocreateTestPlan = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "BE53322FB27218E8C77DDF57"
+            BuildableName = "Fetchora Extension.appex"
+            BlueprintName = "SwiftDownloader Extension"
+            ReferencedContainer = "container:SwiftDownloader.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
+      <Testables>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -61,9 +56,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "27BEE93910EE0FCE6B6C0A86"
-            BuildableName = "Fetchora.app"
-            BlueprintName = "SwiftDownloader"
+            BlueprintIdentifier = "BE53322FB27218E8C77DDF57"
+            BuildableName = "Fetchora Extension.appex"
+            BlueprintName = "SwiftDownloader Extension"
             ReferencedContainer = "container:SwiftDownloader.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -73,16 +68,14 @@
       shouldUseLaunchSchemeArgsEnv = "YES"
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
-      debugDocumentVersioning = "YES"
-      askForAppToLaunch = "Yes"
-      launchAutomaticallySubstyle = "2">
+      debugDocumentVersioning = "YES">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "27BEE93910EE0FCE6B6C0A86"
-            BuildableName = "Fetchora.app"
-            BlueprintName = "SwiftDownloader"
+            BlueprintIdentifier = "BE53322FB27218E8C77DDF57"
+            BuildableName = "Fetchora Extension.appex"
+            BlueprintName = "SwiftDownloader Extension"
             ReferencedContainer = "container:SwiftDownloader.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

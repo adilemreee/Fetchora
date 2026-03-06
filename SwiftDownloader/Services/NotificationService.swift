@@ -39,7 +39,9 @@ class NotificationService {
         let content = UNMutableNotificationContent()
         content.title = "Download Failed"
         content.body = "\(fileName): \(error)"
-        content.sound = .default
+        content.sound = UserDefaults.standard.bool(forKey: Constants.Keys.soundEnabled)
+            ? .default
+            : nil
 
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,

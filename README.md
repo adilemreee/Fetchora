@@ -1,17 +1,19 @@
 # Fetchora
 
-A powerful Safari Download Manager for macOS built with Swift, SwiftUI, and SwiftData.
+A Safari-focused download manager for macOS built with Swift, SwiftUI, and SwiftData.
 
 ## Features
 
-- 🌐 **Safari Web Extension** — Intercepts downloads directly from Safari
+- 🌐 **Safari Web Extension** — Intercepts Safari downloads and domain rules from the companion extension
 - ⏯️ **Pause/Resume/Cancel** — Full download control
 - 📊 **Speed & ETA Tracking** — Real-time speed calculation with estimated time
 - 📂 **Auto-Categorization** — Sorts files into Videos, Documents, Music, etc.
-- 🕐 **Download Scheduler** — Schedule downloads for specific times
+- 🕐 **Scheduled Downloads** — Queue new downloads for a configured time or schedule individual items
+- 🔁 **Startup Recovery** — Restarts interrupted waiting/downloading items on the next launch
+- 🛡️ **Store Recovery UI** — Corrupted local data now surfaces a recovery/reset screen instead of silently falling back
+- 🔐 **Bookmark-Based Folder Access** — Keeps access to user-selected download folders across relaunches
 - 📱 **Menu Bar Widget** — Quick access from the status bar
-- 🎨 **Dark Theme** — Modern, polished dark UI
-- ⚙️ **Configurable** — Concurrent downloads, speed limits, launch at login, hide from dock
+- ⚙️ **Configurable** — Concurrent downloads, speed limits, launch at login, URL rules, hide from dock
 
 ## Requirements
 
@@ -25,12 +27,24 @@ A powerful Safari Download Manager for macOS built with Swift, SwiftUI, and Swif
 # Install XcodeGen (if not installed)
 brew install xcodegen
 
-# Generate Xcode project
-cd SwiftDownloader
+# Generate the Xcode project from the repository root
+cd /path/to/SwiftDownloader-main
 xcodegen generate
 
 # Open in Xcode
 open SwiftDownloader.xcodeproj
+```
+
+## Tests
+
+```bash
+xcodebuild test -project SwiftDownloader.xcodeproj -scheme SwiftDownloaderTests -destination 'platform=macOS'
+```
+
+If you are running tests from the command line without local signing configured, use:
+
+```bash
+xcodebuild test -project SwiftDownloader.xcodeproj -scheme SwiftDownloaderTests -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
 ```
 
 ## Safari Extension Setup

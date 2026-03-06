@@ -9,10 +9,10 @@ class SpeedTracker: @unchecked Sendable {
     }
 
     private var samples: [Sample] = []
-    private let windowSize: TimeInterval = 5.0
+    private let windowSize: TimeInterval = 2.0
     private let lock = NSLock()
     private var _smoothedSpeed: Double = 0
-    private let smoothingFactor: Double = 0.25 // EMA alpha — lower = smoother
+    private let smoothingFactor: Double = 0.4 // Faster decay so throttling is visible sooner
 
     var currentSpeed: Double {
         lock.lock()

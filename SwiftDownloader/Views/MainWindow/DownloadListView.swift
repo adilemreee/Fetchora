@@ -516,18 +516,19 @@ struct DownloadListView: View {
         }
 
         // Priority
-        Menu(NSLocalizedString("priority.label", comment: "")) {
-            ForEach(DownloadPriority.allCases, id: \.self) { p in
-                Button {
-                    item.priority = p
-                    try? modelContext.save()
-                } label: {
-                    HStack {
-                        Image(systemName: p.icon)
-                        Text(p.localizedName)
-                        if item.safePriority == p {
-                            Image(systemName: "checkmark")
-                        }
+        Divider()
+        Text(NSLocalizedString("priority.label", comment: ""))
+        ForEach(DownloadPriority.allCases, id: \.self) { p in
+            Button {
+                item.priority = p
+                try? modelContext.save()
+                downloadManager.refreshScheduling()
+            } label: {
+                HStack {
+                    Image(systemName: p.icon)
+                    Text(p.localizedName)
+                    if item.safePriority == p {
+                        Image(systemName: "checkmark")
                     }
                 }
             }
@@ -597,10 +598,17 @@ struct DownloadListView: View {
 
     private func performSchedule() {
         guard let item = schedulingItem else { return }
+        if item.status == .waiting {
+            downloadManager.removeFromPendingQueue(itemId: item.id)
+        }
+
+        if item.status == .downloading {
+            downloadManager.pauseDownload(item: item)
+        }
+
         item.status = .scheduled
+        item.errorMessage = nil
         item.scheduledDate = scheduleDate
-        downloadManager.cancelDownload(item: item)
-        item.status = .scheduled
         try? modelContext.save()
 
         // SchedulerService timer will pick this up when the time arrives
@@ -609,9 +617,7 @@ struct DownloadListView: View {
     }
 
     private func deleteItem(_ item: DownloadItem) {
-        if item.status == .downloading || item.status == .paused {
-            downloadManager.cancelDownload(item: item)
-        }
+        downloadManager.prepareForRemoval(item: item)
         if selectedItem?.id == item.id {
             selectedItem = nil
         }
@@ -621,10 +627,13 @@ struct DownloadListView: View {
     }
 
     private func deleteItemWithFile(_ item: DownloadItem) {
-        if item.fileExists {
-            try? FileManager.default.removeItem(atPath: item.destinationPath)
+        downloadManager.prepareForRemoval(item: item, deleteCompletedFile: true)
+        if selectedItem?.id == item.id {
+            selectedItem = nil
         }
-        deleteItem(item)
+        selectedItems.remove(item.id)
+        modelContext.delete(item)
+        try? modelContext.save()
     }
 
     private func requestDelete(_ item: DownloadItem) {
@@ -645,15 +654,19 @@ struct DownloadListView: View {
     private func deleteSelectedItems() {
         for id in selectedItems {
             if let item = allItems.first(where: { $0.id == id }) {
-                deleteItem(item)
+                if deleteConfirmation == "deleteFile" {
+                    deleteItemWithFile(item)
+                } else {
+                    deleteItem(item)
+                }
             }
         }
         selectedItems.removeAll()
     }
 
     private func clearAllDownloads() {
-        downloadManager.pauseAll()
         for item in allItems {
+            downloadManager.prepareForRemoval(item: item)
             modelContext.delete(item)
         }
         try? modelContext.save()

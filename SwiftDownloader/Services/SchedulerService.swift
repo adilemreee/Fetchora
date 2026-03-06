@@ -51,7 +51,7 @@ class SchedulerService: ObservableObject {
         guard let items = fetchScheduledItems?() else { return }
         let now = Date()
         for item in items where item.status == .scheduled {
-            if let scheduled = item.scheduledDate, scheduled <= now {
+            if ScheduledDownloadPlanner.shouldStartScheduledItem(item, now: now) {
                 item.status = .waiting
                 item.scheduledDate = nil
                 startDownloadHandler?(item)

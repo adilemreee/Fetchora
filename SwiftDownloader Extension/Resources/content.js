@@ -41,6 +41,26 @@
     return DOWNLOAD_EXTENSIONS.has(getExtension(url));
   }
 
+  function normalizeDomain(rule) {
+    return String(rule || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .replace(/\/+$/, "");
+  }
+
+  function matchesRule(url) {
+    if (!urlRules.length) return false;
+
+    try {
+      const host = new URL(url).hostname.toLowerCase();
+      return urlRules.some((rule) => host === rule || host.endsWith(`.${rule}`));
+    } catch (e) {
+      return false;
+    }
+  }
+
   function getFileName(url) {
     try {
       const pathname = new URL(url).pathname;
@@ -64,12 +84,19 @@
 
   // Cache interception state for synchronous access in click handler
   let interceptEnabled = true;
+  let urlRules = [];
   browser.storage.local.get("interceptEnabled", (result) => {
     interceptEnabled = result.interceptEnabled !== false;
   });
   browser.storage.onChanged.addListener((changes) => {
     if (changes.interceptEnabled) {
       interceptEnabled = changes.interceptEnabled.newValue !== false;
+    }
+  });
+
+  browser.runtime.sendMessage({ action: "getInterceptionConfig" }, (response) => {
+    if (response && response.status === "ok" && Array.isArray(response.urlRules)) {
+      urlRules = response.urlRules.map(normalizeDomain).filter(Boolean);
     }
   });
 
@@ -87,9 +114,10 @@
 
       const hasDownloadAttr = link.hasAttribute("download");
       const isDownloadable = isDownloadableFile(url);
+      const matchesDomainRule = matchesRule(url);
 
-      // Only intercept: explicit download attribute OR known downloadable extension
-      if (!hasDownloadAttr && !isDownloadable) return;
+      // Intercept: explicit download attribute, known downloadable extension, or a configured URL rule
+      if (!hasDownloadAttr && !isDownloadable && !matchesDomainRule) return;
 
       event.preventDefault();
       event.stopPropagation();

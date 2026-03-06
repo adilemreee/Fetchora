@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "AF25C565-9707-4EDE-8228-0B61AE6F3EA4",
+      "name" : "Default",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:SwiftDownloader.xcodeproj",
+        "identifier" : "4CBA9EFCD3159186363DC1CA",
+        "name" : "SwiftDownloaderTests"
+      }
+    }
+  ],
+  "version" : 1
+}

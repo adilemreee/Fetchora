@@ -1,11 +1,11 @@
 import SwiftUI
-import SwiftData
 
 @main
 struct SwiftDownloaderApp: App {
-    @StateObject private var downloadManager = DownloadManager.shared
+    @StateObject private var persistenceController = PersistenceController()
     @AppStorage(Constants.Keys.showMenuBarIcon) private var showMenuBar = true
     @AppStorage(Constants.Keys.themeMode) private var themeMode = "system"
+    private let externalDownloadRequestGate = ExternalDownloadRequestGate.shared
 
     private var colorScheme: ColorScheme? {
         switch themeMode {
@@ -23,43 +23,21 @@ struct SwiftDownloaderApp: App {
         }
     }
 
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([DownloadItem.self])
-        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-        do {
-            return try ModelContainer(for: schema, configurations: [config])
-        } catch {
-            // If migration fails, try with a fresh store
-            let inMemoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-            do {
-                return try ModelContainer(for: schema, configurations: [inMemoryConfig])
-            } catch {
-                fatalError("Could not create ModelContainer: \(error)")
-            }
-        }
-    }()
-
     var body: some Scene {
         // Main Window
         WindowGroup(id: "main") {
-            ContentView()
-                .id(themeMode)
-                .frame(minWidth: 900, minHeight: 600)
-                .background(Theme.surfacePrimary)
-                .preferredColorScheme(colorScheme)
+            mainWindowContent
                 .onAppear {
                     applyThemeToAllWindows()
                     setupDistributedNotificationListenerOnce()
                     applyAppBehaviorSettings()
-                }
-                .onChange(of: themeMode) { _, _ in
-                    applyThemeToAllWindows()
+                    SharedSettings.syncURLRulesFromStandardDefaults()
+                    _ = FileOrganizer.shared.baseDownloadDirectory
                 }
                 .onOpenURL { url in
                     handleIncomingURL(url)
                 }
         }
-        .modelContainer(sharedModelContainer)
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1100, height: 700)
         .commands {
@@ -78,19 +56,62 @@ struct SwiftDownloaderApp: App {
 
         // Menu Bar
         MenuBarExtra("Fetchora", systemImage: "arrow.down.circle.fill", isInserted: $showMenuBar) {
-            MenuBarView()
-                .id(themeMode)
-                .modelContainer(sharedModelContainer)
-                .preferredColorScheme(colorScheme)
-                .onChange(of: themeMode) { _, _ in
-                    applyThemeToAllWindows()
-                }
+            menuBarContent
         }
         .menuBarExtraStyle(.window)
 
         // Settings window
         Settings {
+            settingsContent
+        }
+    }
+
+    @ViewBuilder
+    private var mainWindowContent: some View {
+        if let modelContainer = persistenceController.modelContainer {
+            ContentView()
+                .modelContainer(modelContainer)
+                .id(themeMode)
+                .frame(minWidth: 900, minHeight: 600)
+                .background(Theme.surfacePrimary)
+                .preferredColorScheme(colorScheme)
+                .onChange(of: themeMode) { _, _ in
+                    applyThemeToAllWindows()
+                }
+        } else if persistenceController.isLoading {
+            ProgressView(Constants.appName)
+                .frame(minWidth: 900, minHeight: 600)
+        } else {
+            StoreRecoveryView(persistenceController: persistenceController)
+                .frame(minWidth: 720, minHeight: 480)
+                .preferredColorScheme(colorScheme)
+        }
+    }
+
+    @ViewBuilder
+    private var menuBarContent: some View {
+        if let modelContainer = persistenceController.modelContainer {
+            MenuBarView()
+                .id(themeMode)
+                .modelContainer(modelContainer)
+                .preferredColorScheme(colorScheme)
+                .onChange(of: themeMode) { _, _ in
+                    applyThemeToAllWindows()
+                }
+        } else if persistenceController.isLoading {
+            ProgressView()
+                .padding()
+        } else {
+            StoreRecoveryView(persistenceController: persistenceController, compact: true)
+                .frame(width: 320)
+        }
+    }
+
+    @ViewBuilder
+    private var settingsContent: some View {
+        if let modelContainer = persistenceController.modelContainer {
             SettingsView()
+                .modelContainer(modelContainer)
                 .id(themeMode)
                 .frame(width: 500, height: 600)
                 .preferredColorScheme(colorScheme)
@@ -100,6 +121,10 @@ struct SwiftDownloaderApp: App {
                 .onChange(of: themeMode) { _, _ in
                     applyThemeToAllWindows()
                 }
+        } else {
+            StoreRecoveryView(persistenceController: persistenceController)
+                .frame(width: 560, height: 420)
+                .preferredColorScheme(colorScheme)
         }
     }
 
@@ -145,11 +170,15 @@ struct SwiftDownloaderApp: App {
     }
 
     private func addDownload(urlString: String, fileName: String) {
+        guard externalDownloadRequestGate.shouldForward(urlString: urlString, fileName: fileName) else {
+            return
+        }
+
         // Route through ContentView so duplicate detection works
         NotificationCenter.default.post(
             name: Notification.Name("addDownloadURL"),
             object: nil,
-            userInfo: ["url": urlString]
+            userInfo: ["url": urlString, "fileName": fileName]
         )
     }
 
@@ -169,7 +198,10 @@ struct SwiftDownloaderApp: App {
             // fetchora://download?url=<encoded_url>
             if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
                let urlParam = components.queryItems?.first(where: { $0.name == "url" })?.value {
-                addDownload(urlString: urlParam, fileName: URL(string: urlParam)?.lastPathComponent ?? "download")
+                let fileName = components.queryItems?.first(where: { $0.name == "fileName" })?.value
+                    ?? URL(string: urlParam)?.lastPathComponent
+                    ?? "download"
+                addDownload(urlString: urlParam, fileName: fileName)
             }
         default:
             // fetchora://open or any other — just bring the window to front
