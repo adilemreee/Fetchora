@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -48,7 +48,7 @@
 		A1FB36C493749BE708FC64B8 /* icon-48.png in Resources */ = {isa = PBXBuildFile; fileRef = FF828423226DBAB72CD2A86A /* icon-48.png */; };
 		A51C1C1EF772107FF7480F92 /* DownloadItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF71F4F454F52EBE50FEBC8 /* DownloadItem.swift */; };
 		A6F4DD46B9206391B783846E /* DuplicateDownloadResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD09F411B1658D1B880E6AA /* DuplicateDownloadResolver.swift */; };
-		AE7822AAF8F1DE941A55649A /* SwiftDownloader Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B6E00D8E61AF7CEF4FE3DB9C /* SwiftDownloader Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AE7822AAF8F1DE941A55649A /* Fetchora Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B6E00D8E61AF7CEF4FE3DB9C /* Fetchora Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AFE2662FF987E32AB1C24D4E /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 9863006EA79787005FE27E70 /* background.js */; };
 		B4306DF9BF17FECEC7BC482B /* SchedulerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740586B68473D6AC6ED4EF5A /* SchedulerServiceTests.swift */; };
 		B4A1836BD668F1DD4BAFD6A3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 459438AADC0832E9011EC5EA /* Assets.xcassets */; };
@@ -93,7 +93,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				AE7822AAF8F1DE941A55649A /* SwiftDownloader Extension.appex in Embed Foundation Extensions */,
+				AE7822AAF8F1DE941A55649A /* Fetchora Extension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -108,7 +108,7 @@
 		17F63BE4B2AAA4901F9DB1C7 /* DownloadSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadSchedule.swift; sourceTree = "<group>"; };
 		1AC8F73A0C395133239C62B8 /* DownloadRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRowView.swift; sourceTree = "<group>"; };
 		1E87ABBD776ACF858E8E112D /* DownloadRecoveryPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRecoveryPlanner.swift; sourceTree = "<group>"; };
-		23BA97D54793A19D01D8D880 /* SwiftDownloader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftDownloader.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		23BA97D54793A19D01D8D880 /* Fetchora.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fetchora.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		257444F3BDBA8ABCACC6D188 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		27024DF651DA28CE73AEB5AB /* DownloadListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadListView.swift; sourceTree = "<group>"; };
 		27544AF3659CB615F4C9CBF8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -120,7 +120,7 @@
 		459438AADC0832E9011EC5EA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4796FDDCAB002A923D5C2AAA /* DownloadCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadCategory.swift; sourceTree = "<group>"; };
 		49EB1E068538AA83E666D8B8 /* ProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBar.swift; sourceTree = "<group>"; };
-		5392B32113E6FC1415F01889 /* SwiftDownloader.xctestplan */ = {isa = PBXFileReference; path = SwiftDownloader.xctestplan; sourceTree = "<group>"; };
+		5392B32113E6FC1415F01889 /* SwiftDownloader.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = SwiftDownloader.xctestplan; sourceTree = "<group>"; };
 		560D6B8BA7D7FC0A489E0814 /* icon-512.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-512.png"; sourceTree = "<group>"; };
 		57B44C95D850B50E14F0E59A /* ClipboardMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardMonitor.swift; sourceTree = "<group>"; };
 		5D2298B37801673C240C2186 /* FileOrganizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileOrganizer.swift; sourceTree = "<group>"; };
@@ -149,12 +149,12 @@
 		A8455A65CA2C50441CF75C41 /* DownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManager.swift; sourceTree = "<group>"; };
 		A92FF7311C5897377B3C79EE /* icon-256.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icon-256.png"; sourceTree = "<group>"; };
 		AAD09F411B1658D1B880E6AA /* DuplicateDownloadResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateDownloadResolver.swift; sourceTree = "<group>"; };
-		AC8DAAA724947449AEE0B556 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AC8DAAA724947449AEE0B556 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AE9A2511E0CACCF30CC3EF3B /* HashVerifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HashVerifier.swift; sourceTree = "<group>"; };
 		B35991B8F87298E219DD8B17 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = popup.html; sourceTree = "<group>"; };
 		B4B5C14DB674015740C0D646 /* PreviewHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelper.swift; sourceTree = "<group>"; };
 		B5EE37FECF788355B6DE6C6C /* ScheduledDownloadPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledDownloadPlanner.swift; sourceTree = "<group>"; };
-		B6E00D8E61AF7CEF4FE3DB9C /* SwiftDownloader Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "SwiftDownloader Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B6E00D8E61AF7CEF4FE3DB9C /* Fetchora Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Fetchora Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B88B2EE74A238A6D6113CA3C /* SwiftDownloaderTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftDownloaderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B993870B1ABE331BD78D8552 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BB15ADD840D26E6CCDC0A789 /* DownloadTrafficLimiterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadTrafficLimiterTests.swift; sourceTree = "<group>"; };
@@ -206,8 +206,8 @@
 		5E66F1D968B48AA7DB6C25E5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B6E00D8E61AF7CEF4FE3DB9C /* SwiftDownloader Extension.appex */,
-				23BA97D54793A19D01D8D880 /* SwiftDownloader.app */,
+				B6E00D8E61AF7CEF4FE3DB9C /* Fetchora Extension.appex */,
+				23BA97D54793A19D01D8D880 /* Fetchora.app */,
 				B88B2EE74A238A6D6113CA3C /* SwiftDownloaderTests.xctest */,
 			);
 			name = Products;
@@ -369,7 +369,7 @@
 			packageProductDependencies = (
 			);
 			productName = SwiftDownloader;
-			productReference = 23BA97D54793A19D01D8D880 /* SwiftDownloader.app */;
+			productReference = 23BA97D54793A19D01D8D880 /* Fetchora.app */;
 			productType = "com.apple.product-type.application";
 		};
 		4CBA9EFCD3159186363DC1CA /* SwiftDownloaderTests */ = {
@@ -405,7 +405,7 @@
 			packageProductDependencies = (
 			);
 			productName = "SwiftDownloader Extension";
-			productReference = B6E00D8E61AF7CEF4FE3DB9C /* SwiftDownloader Extension.appex */;
+			productReference = B6E00D8E61AF7CEF4FE3DB9C /* Fetchora Extension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -442,7 +442,6 @@
 			);
 			mainGroup = 9AB7FBCBEB859FBFC7AAFB63;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -587,8 +586,9 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 10;
 				INFOPLIST_FILE = SwiftDownloader/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Fetchora;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -708,10 +708,15 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 10;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "SwiftDownloader Extension/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
+				INFOPLIST_KEY_CFBundleDisplayName = Fetchora;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.adilemre.SwiftDownloader.Extension;
 				PRODUCT_NAME = "Fetchora Extension";
@@ -727,10 +732,15 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 10;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "SwiftDownloader Extension/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
+				INFOPLIST_KEY_CFBundleDisplayName = Fetchora;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.adilemre.SwiftDownloader.Extension;
 				PRODUCT_NAME = "Fetchora Extension";
@@ -806,8 +816,9 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 10;
 				INFOPLIST_FILE = SwiftDownloader/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Fetchora;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
