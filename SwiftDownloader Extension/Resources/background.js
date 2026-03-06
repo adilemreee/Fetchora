@@ -13,6 +13,10 @@ function normalizeDomain(rule) {
         .replace(/\/+$/, '');
 }
 
+function isBrowserManagedURL(url) {
+    return typeof url === 'string' && (url.startsWith('blob:') || url.startsWith('data:'));
+}
+
 function refreshInterceptionConfig(callback) {
     browser.runtime.sendNativeMessage(
         'application.id',
@@ -47,6 +51,19 @@ try {
     browser.contextMenus.onClicked.addListener((info, tab) => {
         if (info.menuItemId === 'fetchora-download-link' && info.linkUrl) {
             const url = info.linkUrl;
+            if (isBrowserManagedURL(url)) {
+                // Ask the content script to fetch the blob data
+                if (tab && tab.id) {
+                    let fileName = 'download';
+                    browser.tabs.sendMessage(tab.id, {
+                        action: 'fetchBlobForContextMenu',
+                        blobUrl: url,
+                        fileName: fileName
+                    });
+                }
+                return;
+            }
+
             let fileName = 'download';
             try {
                 const pathname = new URL(url).pathname;
@@ -90,8 +107,7 @@ try {
                 if (result.interceptEnabled === false) return;
 
                 const url = downloadItem.url;
-                // Skip blob/data URLs
-                if (url.startsWith('blob:') || url.startsWith('data:')) return;
+                if (isBrowserManagedURL(url)) return;
 
                 const fileName = downloadItem.filename
                     ? downloadItem.filename.split('/').pop()
@@ -138,6 +154,11 @@ try {
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'interceptDownload') {
+        if (isBrowserManagedURL(message.url)) {
+            console.log('[Fetchora] Skipping browser-managed URL intercept:', message.url);
+            return;
+        }
+
         browser.runtime.sendNativeMessage(
             'application.id',
             {
@@ -149,6 +170,24 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             },
             (response) => {
                 console.log('[Fetchora] Response:', response);
+            }
+        );
+        return true;
+    }
+
+    if (message.action === 'interceptBlobDownload') {
+        browser.runtime.sendNativeMessage(
+            'application.id',
+            {
+                action: 'blobDownload',
+                fileName: message.fileName || 'download',
+                mimeType: message.mimeType || 'application/octet-stream',
+                base64Data: message.base64Data,
+                pageUrl: message.pageUrl || '',
+                pageTitle: message.pageTitle || ''
+            },
+            (response) => {
+                console.log('[Fetchora] Blob download response:', response);
             }
         );
         return true;

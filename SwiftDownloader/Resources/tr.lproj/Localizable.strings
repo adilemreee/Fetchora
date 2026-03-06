@@ -287,6 +287,9 @@
 "settings.proxyHost" = "Sunucu (ör. 127.0.0.1)";
 "settings.proxyPort" = "Port";
 "settings.invalidHostPort" = "Geçersiz sunucu veya port";
+"download.error.invalidURL" = "Geçersiz URL.";
+"download.error.browserManagedURL" = "Bu bağlantı tarayıcıya özel bir blob/data URL kullanıyor. Bunu doğrudan Safari içinde indirin.";
+"download.error.unsupportedScheme" = "Yalnızca http ve https indirme bağlantıları desteklenir.";
 
 /* Delete Confirmation */
 "delete.confirmTitle" = "İndirmeyi Sil";

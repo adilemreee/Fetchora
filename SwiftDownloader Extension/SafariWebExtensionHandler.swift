@@ -14,6 +14,8 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         switch action {
         case "newDownload":
             handleNewDownload(messageDict, context: context)
+        case "blobDownload":
+            handleBlobDownload(messageDict, context: context)
         case "openApp":
             handleOpenApp(context: context)
         case "getInterceptionConfig":
@@ -41,6 +43,14 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     private func handleNewDownload(_ message: [String: Any], context: NSExtensionContext) {
         guard let url = message["url"] as? String else {
             sendResponse(context: context, message: ["error": "Missing URL"])
+            return
+        }
+
+        if isBrowserManagedURL(url) {
+            sendResponse(context: context, message: [
+                "status": "ignored",
+                "message": "Browser-managed URL should be downloaded by Safari"
+            ])
             return
         }
 
@@ -74,6 +84,64 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         ])
     }
 
+    private func handleBlobDownload(_ message: [String: Any], context: NSExtensionContext) {
+        guard let base64String = message["base64Data"] as? String,
+              let fileData = Data(base64Encoded: base64String) else {
+            sendResponse(context: context, message: ["error": "Invalid or missing base64 data"])
+            return
+        }
+
+        let fileName = message["fileName"] as? String ?? "download"
+
+        // Write decoded data to App Group shared container
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
+            sendResponse(context: context, message: ["error": "App group container not available"])
+            return
+        }
+
+        let tempDir = containerURL.appendingPathComponent("BlobDownloads", isDirectory: true)
+        try? FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        // Use UUID prefix to avoid collisions
+        let tempFileName = "\(UUID().uuidString)_\(fileName)"
+        let tempFileURL = tempDir.appendingPathComponent(tempFileName)
+
+        do {
+            try fileData.write(to: tempFileURL)
+        } catch {
+            sendResponse(context: context, message: ["error": "Failed to write blob data: \(error.localizedDescription)"])
+            return
+        }
+
+        // Notify main app with temp file path and original file name
+        let payload = "\(tempFileURL.path)|||SPLIT|||\(fileName)"
+
+        if isMainAppRunning {
+            DistributedNotificationCenter.default().postNotificationName(
+                NSNotification.Name("com.adilemre.SwiftDownloader.blobDownload"),
+                object: payload,
+                userInfo: nil,
+                deliverImmediately: true
+            )
+        } else {
+            // Launch the app with a custom URL scheme
+            if var components = URLComponents(string: "fetchora://blob-download") {
+                components.queryItems = [
+                    URLQueryItem(name: "tempPath", value: tempFileURL.path),
+                    URLQueryItem(name: "fileName", value: fileName)
+                ]
+                if let launchURL = components.url {
+                    NSWorkspace.shared.open(launchURL)
+                }
+            }
+        }
+
+        sendResponse(context: context, message: [
+            "status": "success",
+            "message": "Blob download saved: \(fileName)"
+        ])
+    }
+
     private func handleOpenApp(context: NSExtensionContext) {
         // Post a distributed notification to wake up the main app
         DistributedNotificationCenter.default().postNotificationName(
@@ -97,6 +165,11 @@ class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
             "status": "ok",
             "urlRules": urlRules
         ])
+    }
+
+    private func isBrowserManagedURL(_ urlString: String) -> Bool {
+        guard let scheme = URL(string: urlString)?.scheme?.lowercased() else { return false }
+        return scheme == "blob" || scheme == "data"
     }
 
     private func sendResponse(context: NSExtensionContext, message: [String: Any]) {

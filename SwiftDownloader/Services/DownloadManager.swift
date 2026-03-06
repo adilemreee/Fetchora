@@ -169,11 +169,7 @@ class DownloadManager: NSObject, ObservableObject {
     // MARK: - Public API
 
     func startDownload(item: DownloadItem) {
-        guard let url = URL(string: item.url) else {
-            item.status = .failed
-            item.errorMessage = "Invalid URL"
-            return
-        }
+        guard let url = resolveDownloadURL(for: item) else { return }
 
         pendingQueue.removeAll { $0.id == item.id }
 
@@ -233,11 +229,7 @@ class DownloadManager: NSObject, ObservableObject {
         // Remove from pending queue if present
         pendingQueue.removeAll { $0.id == item.id }
 
-        guard let url = URL(string: item.url) else {
-            item.status = .failed
-            item.errorMessage = "Invalid URL"
-            return
-        }
+        guard let url = resolveDownloadURL(for: item) else { return }
         beginDownload(item: item, url: url)
     }
 
@@ -264,7 +256,7 @@ class DownloadManager: NSObject, ObservableObject {
             item.status = .downloading
             SegmentedDownloadManager.shared.setBandwidthConstrained(speedLimitBytesPerSecond > 0, for: item.id)
             _ = SegmentedDownloadManager.shared.resumeSegmented(itemId: item.id)
-        } else if let url = URL(string: item.url) {
+        } else if let url = resolveDownloadURL(for: item) {
             beginDownload(item: item, url: url)
         }
     }
@@ -340,6 +332,31 @@ class DownloadManager: NSObject, ObservableObject {
 
     /// Tracks the .fetchoradownload placeholder path for each active download
     private var tempPlaceholders: [UUID: URL] = [:]
+
+    private func failValidation(for item: DownloadItem, message: String) {
+        pendingQueue.removeAll { $0.id == item.id }
+        item.status = .failed
+        item.errorMessage = message
+    }
+
+    private func resolveDownloadURL(for item: DownloadItem) -> URL? {
+        guard let url = URL(string: item.url) else {
+            failValidation(for: item, message: NSLocalizedString("download.error.invalidURL", comment: ""))
+            return nil
+        }
+
+        if url.isBrowserManagedDownloadURL {
+            failValidation(for: item, message: NSLocalizedString("download.error.browserManagedURL", comment: ""))
+            return nil
+        }
+
+        guard url.isNetworkDownloadURL else {
+            failValidation(for: item, message: NSLocalizedString("download.error.unsupportedScheme", comment: ""))
+            return nil
+        }
+
+        return url
+    }
 
     private func beginDownload(item: DownloadItem, url: URL) {
         item.errorMessage = nil
@@ -484,7 +501,7 @@ class DownloadManager: NSObject, ObservableObject {
 
         for next in itemsToStart {
             pendingQueue.removeAll { $0.id == next.id }
-            if let url = URL(string: next.url) {
+            if let url = resolveDownloadURL(for: next) {
                 activateQueuedItem(next, url: url)
             }
         }

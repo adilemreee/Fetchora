@@ -48,6 +48,16 @@ extension URL {
         pathExtension.lowercased()
     }
 
+    var isBrowserManagedDownloadURL: Bool {
+        let normalizedScheme = scheme?.lowercased()
+        return normalizedScheme == "blob" || normalizedScheme == "data"
+    }
+
+    var isNetworkDownloadURL: Bool {
+        let normalizedScheme = scheme?.lowercased()
+        return normalizedScheme == "http" || normalizedScheme == "https"
+    }
+
     var isDownloadableFile: Bool {
         Constants.downloadableExtensions.contains(fileExtensionLowercased)
     }

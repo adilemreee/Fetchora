@@ -30,9 +30,6 @@ struct ContentView: View {
     @AppStorage(Constants.Keys.themeMode) private var themeMode = "system"
     @AppStorage(Constants.Keys.autoRemoveDeletedFiles) private var autoRemoveDeletedFiles = false
     @AppStorage(Constants.Keys.autoRemoveCompleted) private var autoRemoveCompleted = false
-    @AppStorage(Constants.Keys.scheduledDownloadEnabled) private var scheduledDownloadEnabled = false
-    @AppStorage(Constants.Keys.scheduledDownloadHour) private var scheduledDownloadHour = 2
-    @AppStorage(Constants.Keys.scheduledDownloadMinute) private var scheduledDownloadMinute = 0
     @State private var selectedFilter: SidebarFilter = .all
     @State private var selectedItem: DownloadItem?
     @State private var searchText = ""
@@ -46,10 +43,8 @@ struct ContentView: View {
     @State private var duplicateFileName = ""
     @State private var duplicateFileURLString = ""
     @State private var duplicateFilePath = ""
-    @State private var duplicateFileExistingItem: DownloadItem?
     @State private var rememberDuplicateFileChoice = false
     @State private var pendingSheet: SheetType?
-    @State private var hasRecoveredLaunchState = false
     @AppStorage("duplicateFileDefaultAction") private var duplicateFileDefaultAction = "" // "", "rename", "overwrite"
     @Query private var allDownloadItems: [DownloadItem]
     @Environment(\.modelContext) private var modelContext
@@ -139,19 +134,14 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("addDownloadURL"))) { notification in
             if let urlString = notification.userInfo?["url"] as? String {
-                addDownloadByURLString(urlString, preferredFileName: notification.userInfo?["fileName"] as? String)
+                addDownloadByURLString(urlString)
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: Constants.Notifications.newDownloadRequested)) { notification in
-            guard let downloadId = notification.userInfo?["downloadId"] as? UUID else { return }
-
-            let descriptor = FetchDescriptor<DownloadItem>(predicate: #Predicate { $0.id == downloadId })
-            guard let item = try? modelContext.fetch(descriptor).first else { return }
-
-            item.status = .waiting
-            item.scheduledDate = nil
-            try? modelContext.save()
-            downloadManager.startDownload(item: item)
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("completeBlobDownload"))) { notification in
+            if let tempPath = notification.userInfo?["tempPath"] as? String,
+               let fileName = notification.userInfo?["fileName"] as? String {
+                completeBlobDownload(tempPath: tempPath, fileName: fileName)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: Constants.Notifications.downloadCompleted)) { notification in
             guard autoRemoveCompleted,
@@ -543,10 +533,9 @@ struct ContentView: View {
 
                 Button(action: {
                     let url = duplicateURL
-                    let fileName = duplicateExistingItem?.fileName
                     activeSheet = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        addDownloadByURLString(url, skipDuplicateCheck: true, preferredFileName: fileName)
+                        addDownloadByURLString(url, skipDuplicateCheck: true)
                     }
                 }) {
                     Text(NSLocalizedString("duplicate.download", comment: ""))
@@ -623,10 +612,9 @@ struct ContentView: View {
                 Button(action: {
                     if rememberDuplicateFileChoice { duplicateFileDefaultAction = "rename" }
                     let url = duplicateFileURLString
-                    let fileName = duplicateFileName
                     activeSheet = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        addDownloadByURLString(url, skipDuplicateCheck: true, skipFileNameCheck: true, autoRename: true, preferredFileName: fileName)
+                        addDownloadByURLString(url, skipDuplicateCheck: true, skipFileNameCheck: true, autoRename: true)
                     }
                 }) {
                     Text(NSLocalizedString("duplicate.rename", comment: ""))
@@ -642,10 +630,9 @@ struct ContentView: View {
                 Button(action: {
                     if rememberDuplicateFileChoice { duplicateFileDefaultAction = "overwrite" }
                     let url = duplicateFileURLString
-                    let fileName = duplicateFileName
                     activeSheet = nil
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        addDownloadByURLString(url, skipDuplicateCheck: true, skipFileNameCheck: true, overwriteExisting: true, preferredFileName: fileName)
+                        addDownloadByURLString(url, skipDuplicateCheck: true, skipFileNameCheck: true)
                     }
                 }) {
                     Text(NSLocalizedString("duplicate.overwrite", comment: ""))
@@ -708,10 +695,6 @@ struct ContentView: View {
             let descriptor = FetchDescriptor<DownloadItem>(predicate: #Predicate { $0.id == id })
             return try? modelContext.fetch(descriptor).first
         }
-        downloadManager.allItemsProvider = { [self] in
-            let descriptor = FetchDescriptor<DownloadItem>()
-            return (try? modelContext.fetch(descriptor)) ?? []
-        }
 
         // Wire up SchedulerService to use SwiftData items
         let scheduler = SchedulerService.shared
@@ -720,16 +703,8 @@ struct ContentView: View {
             let descriptor = FetchDescriptor<DownloadItem>(predicate: #Predicate { $0.status == scheduledStatus })
             return (try? modelContext.fetch(descriptor)) ?? []
         }
-        scheduler.startDownloadHandler = { [self, weak downloadManager] item in
+        scheduler.startDownloadHandler = { [weak downloadManager] item in
             downloadManager?.startDownload(item: item)
-            try? modelContext.save()
-        }
-
-        guard !hasRecoveredLaunchState else { return }
-        hasRecoveredLaunchState = true
-
-        if !allDownloadItems.isEmpty {
-            downloadManager.recoverInterruptedDownloads(items: allDownloadItems)
         }
     }
 
@@ -759,10 +734,11 @@ struct ContentView: View {
     }
 
     private func clearAllDownloads() {
+        downloadManager.pauseAll()
+
         let descriptor = FetchDescriptor<DownloadItem>()
         if let items = try? modelContext.fetch(descriptor) {
             for item in items {
-                downloadManager.prepareForRemoval(item: item)
                 modelContext.delete(item)
             }
             try? modelContext.save()
@@ -796,19 +772,12 @@ struct ContentView: View {
         return false
     }
 
-    private func addDownloadByURLString(
-        _ urlString: String,
-        skipDuplicateCheck: Bool = false,
-        skipFileNameCheck: Bool = false,
-        autoRename: Bool = false,
-        overwriteExisting: Bool = false,
-        preferredFileName: String? = nil
-    ) {
+    private func addDownloadByURLString(_ urlString: String, skipDuplicateCheck: Bool = false, skipFileNameCheck: Bool = false, autoRename: Bool = false) {
         guard let url = URL(string: urlString) else { return }
 
         // Duplicate URL detection
         if !skipDuplicateCheck {
-            if let existing = DuplicateDownloadResolver.existingItem(forURL: urlString, existingItems: allDownloadItems) {
+            if let existing = allDownloadItems.first(where: { $0.url == urlString }) {
                 duplicateURL = urlString
                 duplicateExistingItem = existing
                 showSheet(.duplicateURL)
@@ -816,27 +785,22 @@ struct ContentView: View {
             }
         }
 
-        var fileName = preferredFileName?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if fileName?.isEmpty != false {
-            fileName = url.lastPathComponent.isEmpty ? "download" : url.lastPathComponent
-        }
-        guard var fileName else { return }
+        var fileName = url.lastPathComponent.isEmpty ? "download" : url.lastPathComponent
 
         // Duplicate filename detection
         if !skipFileNameCheck {
-            if let existing = DuplicateDownloadResolver.existingItem(forFileName: fileName, existingItems: allDownloadItems) {
-                let dest = URL(fileURLWithPath: existing.destinationPath)
+            if allDownloadItems.contains(where: { $0.fileName == fileName }) {
+                let dest = FileOrganizer.shared.destinationURL(for: fileName)
                 duplicateFileName = fileName
                 duplicateFileURLString = urlString
                 duplicateFilePath = dest.path
-                duplicateFileExistingItem = existing
 
                 // Auto-apply remembered choice
                 if duplicateFileDefaultAction == "rename" {
-                    addDownloadByURLString(urlString, skipDuplicateCheck: true, skipFileNameCheck: true, autoRename: true, preferredFileName: fileName)
+                    addDownloadByURLString(urlString, skipDuplicateCheck: true, skipFileNameCheck: true, autoRename: true)
                     return
                 } else if duplicateFileDefaultAction == "overwrite" {
-                    addDownloadByURLString(urlString, skipDuplicateCheck: true, skipFileNameCheck: true, overwriteExisting: true, preferredFileName: fileName)
+                    addDownloadByURLString(urlString, skipDuplicateCheck: true, skipFileNameCheck: true)
                     return
                 }
 
@@ -849,59 +813,82 @@ struct ContentView: View {
 
         // Auto-rename: append (1), (2), etc.
         if autoRename {
-            fileName = DuplicateDownloadResolver.uniqueFileName(
-                for: fileName,
-                existingFileNames: allDownloadItems.map(\.fileName)
-            )
-        }
-
-        let destination: URL
-        if overwriteExisting {
-            destination = DuplicateDownloadResolver.overwriteDestination(
-                for: fileName,
-                existingItems: allDownloadItems
-            )
-        } else {
-            destination = FileOrganizer.shared.destinationURL(for: fileName)
-        }
-
-        if overwriteExisting,
-           let existingItem = duplicateFileExistingItem ?? DuplicateDownloadResolver.existingItem(forFileName: fileName, existingItems: allDownloadItems) {
-            downloadManager.prepareForRemoval(item: existingItem, deleteCompletedFile: true)
-            if selectedItem?.id == existingItem.id {
-                selectedItem = nil
+            let baseName = (fileName as NSString).deletingPathExtension
+            let ext = (fileName as NSString).pathExtension
+            var counter = 1
+            while allDownloadItems.contains(where: { $0.fileName == fileName }) {
+                fileName = ext.isEmpty ? "\(baseName) (\(counter))" : "\(baseName) (\(counter)).\(ext)"
+                counter += 1
             }
-            modelContext.delete(existingItem)
-            duplicateFileExistingItem = nil
         }
 
-        if overwriteExisting {
-            FileOrganizer.shared.prepareOverwrite(at: destination)
-        }
-
+        let destination = FileOrganizer.shared.destinationURL(for: fileName)
         let category = FileCategory.from(extension: url.fileExtensionLowercased)
-        let scheduledDate = ScheduledDownloadPlanner.nextAutomaticScheduleDate(
-            isEnabled: scheduledDownloadEnabled,
-            hour: scheduledDownloadHour,
-            minute: scheduledDownloadMinute
-        )
 
         let item = DownloadItem(
             url: urlString,
             fileName: fileName,
             destinationPath: destination.path,
-            category: category,
-            scheduledDate: scheduledDate
+            category: category
         )
         modelContext.insert(item)
         try? modelContext.save()
-
-        if scheduledDate == nil {
-            downloadManager.startDownload(item: item)
-        }
+        downloadManager.startDownload(item: item)
 
         // Spotlight indexing
         indexForSpotlight(item: item)
+    }
+
+    /// Handle a blob download that was fetched in-browser and saved to a temp file by the extension.
+    private func completeBlobDownload(tempPath: String, fileName: String) {
+        let tempURL = URL(fileURLWithPath: tempPath)
+        guard FileManager.default.fileExists(atPath: tempPath) else { return }
+
+        let ext = (fileName as NSString).pathExtension.lowercased()
+        let category = FileCategory.from(extension: ext)
+        let destination = FileOrganizer.shared.destinationURL(for: fileName)
+
+        do {
+            // Move from App Group temp directory to the download directory
+            if FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.removeItem(at: destination)
+            }
+            try FileManager.default.moveItem(at: tempURL, to: destination)
+        } catch {
+            // If move fails (cross-volume), try copy + delete
+            do {
+                try FileManager.default.copyItem(at: tempURL, to: destination)
+                try? FileManager.default.removeItem(at: tempURL)
+            } catch {
+                return
+            }
+        }
+
+        let fileSize = (try? FileManager.default.attributesOfItem(atPath: destination.path)[.size] as? Int64) ?? 0
+
+        let item = DownloadItem(
+            url: "blob://\(fileName)",
+            fileName: fileName,
+            destinationPath: destination.path,
+            category: category
+        )
+        item.status = .completed
+        item.dateCompleted = Date()
+        item.totalBytes = fileSize
+        item.downloadedBytes = fileSize
+        modelContext.insert(item)
+        try? modelContext.save()
+
+        // Spotlight indexing
+        indexForSpotlight(item: item)
+
+        // Notify completion
+        NotificationCenter.default.post(
+            name: Constants.Notifications.downloadCompleted,
+            object: nil,
+            userInfo: ["itemId": item.id]
+        )
+        NotificationService.shared.showDownloadComplete(fileName: fileName, path: destination.path)
     }
 
     private func importTXTFile() {

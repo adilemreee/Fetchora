@@ -287,6 +287,9 @@
 "settings.proxyHost" = "Host (e.g. 127.0.0.1)";
 "settings.proxyPort" = "Port";
 "settings.invalidHostPort" = "Invalid host or port";
+"download.error.invalidURL" = "Invalid URL.";
+"download.error.browserManagedURL" = "This link uses a browser-local blob/data URL. Download it directly in Safari.";
+"download.error.unsupportedScheme" = "Only http and https download links are supported.";
 
 /* Delete Confirmation */
 "delete.confirmTitle" = "Delete Download";

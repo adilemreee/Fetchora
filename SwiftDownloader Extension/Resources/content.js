@@ -41,6 +41,94 @@
     return DOWNLOAD_EXTENSIONS.has(getExtension(url));
   }
 
+  function isBlobOrDataURL(url) {
+    return typeof url === "string" && (url.startsWith("blob:") || url.startsWith("data:"));
+  }
+
+  // Fetch blob/data URL content in the page context and send to the native app
+  async function handleBlobDownload(blobUrl, fileName) {
+    try {
+      const response = await fetch(blobUrl);
+      const blob = await response.blob();
+      const mimeType = blob.type || "application/octet-stream";
+
+      // Derive a better file name with extension if needed
+      if (fileName === "download" || !fileName.includes(".")) {
+        const extMap = {
+          "application/json": "json",
+          "text/plain": "txt",
+          "text/csv": "csv",
+          "text/html": "html",
+          "application/pdf": "pdf",
+          "image/png": "png",
+          "image/jpeg": "jpg",
+          "image/gif": "gif",
+          "image/webp": "webp",
+          "image/svg+xml": "svg",
+          "audio/mpeg": "mp3",
+          "audio/wav": "wav",
+          "video/mp4": "mp4",
+          "video/webm": "webm",
+          "application/zip": "zip",
+          "application/x-tar": "tar",
+          "application/gzip": "gz",
+        };
+        const ext = extMap[mimeType] || mimeType.split("/")[1] || "bin";
+        if (!fileName.includes(".")) {
+          fileName = fileName + "." + ext;
+        }
+      }
+
+      // 50 MB limit for base64 transfer
+      if (blob.size > 50 * 1024 * 1024) {
+        console.log("[Fetchora] Blob too large for native transfer, falling back to browser download.");
+        triggerBrowserDownload(blobUrl, fileName);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = function () {
+        const base64Data = reader.result.split(",")[1];
+        browser.runtime.sendMessage({
+          action: "interceptBlobDownload",
+          fileName: fileName,
+          mimeType: mimeType,
+          base64Data: base64Data,
+          pageUrl: window.location.href,
+          pageTitle: document.title,
+        });
+        showInterceptNotification(fileName);
+      };
+      reader.onerror = function () {
+        console.log("[Fetchora] FileReader error, falling back to browser download.");
+        triggerBrowserDownload(blobUrl, fileName);
+      };
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      console.log("[Fetchora] Could not fetch blob, falling back to browser download:", error);
+      triggerBrowserDownload(blobUrl, fileName);
+    }
+  }
+
+  function triggerBrowserDownload(url, fileName) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  // Listen for blob fetch requests from background script (context menu)
+  browser.runtime.onMessage.addListener((message) => {
+    if (message.action === "fetchBlobForContextMenu" && message.blobUrl) {
+      handleBlobDownload(message.blobUrl, message.fileName || "download");
+    }
+    if (message.action === "showNotification" && message.fileName) {
+      showInterceptNotification(message.fileName);
+    }
+  });
+
   function normalizeDomain(rule) {
     return String(rule || "")
       .trim()
@@ -112,6 +200,18 @@
       const url = link.href;
       if (!url || url.startsWith("javascript:") || url.startsWith("#") || url.startsWith("mailto:")) return;
 
+      // Handle blob/data URLs by fetching them in-browser and sending the data
+      if (isBlobOrDataURL(url)) {
+        const hasDownloadAttr = link.hasAttribute("download");
+        if (hasDownloadAttr || link.closest('[data-testid]') || link.closest('button')) {
+          event.preventDefault();
+          event.stopPropagation();
+          const fileName = link.download || "download";
+          handleBlobDownload(url, fileName);
+        }
+        return;
+      }
+
       const hasDownloadAttr = link.hasAttribute("download");
       const isDownloadable = isDownloadableFile(url);
       const matchesDomainRule = matchesRule(url);
@@ -128,12 +228,7 @@
     true,
   );
 
-  // Listen for messages from background script (context menu / downloads API)
-  browser.runtime.onMessage.addListener((message) => {
-    if (message.action === "showNotification" && message.fileName) {
-      showInterceptNotification(message.fileName);
-    }
-  });
+  // Message listeners are registered above with handleBlobDownload support
 
   // Inject animation style once
   let styleInjected = false;
